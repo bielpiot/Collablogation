@@ -10,4 +10,5 @@ tests/.coverage
 build/
 tests/report/
 secrets.json
+env.json
 TODO.txt
