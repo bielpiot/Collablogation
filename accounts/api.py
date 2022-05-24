@@ -1,2 +1,2 @@
 from rest_framework.views import APIView
-from rest_framework.serializers import Serializer
+from rest_framework import serializers

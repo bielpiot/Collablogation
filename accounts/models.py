@@ -3,13 +3,29 @@ import uuid
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
 from django.utils import timezone
+from versatileimagefield.fields import VersatileImageField
 
 from articles.models import Article
 
 
+def _user_has_article_perm(user, perm, article):
+    """
+    A backend can raise `PermissionDenied` to short-circuit permission checking.
+    """
+    for backend in auth.get_backends():
+        if not hasattr(backend, "has_article_perm"):
+            continue
+        try:
+            if backend.has_article_perm(user, perm, article):
+                return True
+        except PermissionDenied:
+            return False
+    return False
+
+
 class UserManager(BaseUserManager):
 
-    def create_user(self, username, email, password=None):
+    def create_user(self, username, email, password=None, is_active=False):
         if username is None:
             raise TypeError('Please provide username.')
         if email is None:
@@ -17,7 +33,8 @@ class UserManager(BaseUserManager):
 
         user = self.model(
             username=username,
-            email=self.normalize_email(email))
+            email=self.normalize_email(email),
+            is_active=is_active)
 
         if password is not None:
             user.set_password(password)
@@ -41,13 +58,19 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractBaseUser, PermissionsMixin):
-    uuid = models.UUIDField(primary_key=True, db_index=True, default=uuid.uuid4)
+    id = models.UUIDField(primary_key=True, db_index=True, default=uuid.uuid4)
     username = models.CharField(max_length=255, unique=True)
     email = models.EmailField(max_length=255, unique=True, db_index=True, verbose_name='email address')
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     date_joined = models.DateTimeField(default=timezone.now, editable=False)
     last_update = models.DateTimeField(auto_now=True)
+    avatar = VersatileImageField(blank=True, null=True)
+    about = models.CharField(max_length=300, blank=True, null=True)
+    contact = models.CharField(max_length=300, blank=True, null=True)
+    followers = models.ManyToManyField(to='self', related_name='followed_by', through='Follow',
+                                       symmetrical=False)
+    favourite_posts = models.ManyToManyField(Article, related_name='liked_by')
 
     objects = UserManager()
 
@@ -58,28 +81,24 @@ class User(AbstractBaseUser, PermissionsMixin):
     def __str__(self):
         return self.username
 
-
-class Account(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    about = models.CharField(max_length=300, blank=True, null=True)
-    contact = models.CharField(max_length=300, blank=True, null=True)
-    followers = models.ManyToManyField(to='self', related_name='followed_by', through='Follow', null=True,
-                                       symmetrical=False)
-    favourite_posts = models.ManyToManyField(Article, related_name='liked_by', null=True)
+    def has_article_perm(self, perm, article):
+        if self.is_active and self.is_superuser:
+            return True
+        return _user_has_article_perm(self, perm, article)
 
 
 class Follow(models.Model):
-    from_account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name="+")
-    to_account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name="+")
+    from_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="+")
+    to_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="+")
 
     class Meta:
         constraints = [
             models.UniqueConstraint(
                 name='%(class)s_relationships_to_be_unique',
-                fields=["from_account", "to_account"],
+                fields=["from_user", "to_user"],
             ),
             models.CheckConstraint(
                 name='self_%(class)s_restricted',
-                check=~models.Q(from_account=models.F('to_account'))
+                check=~models.Q(from_user=models.F('to_user'))
             )
         ]

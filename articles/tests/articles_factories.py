@@ -4,7 +4,7 @@ import factory
 from faker import Faker
 
 from ..models import Article
-from ...accounts.tests.accounts_factories import UserFactory
+from Collablogation.accounts.tests.accounts_factories import UserFactory
 
 faker = Faker()
 

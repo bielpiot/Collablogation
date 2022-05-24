@@ -1,13 +1,9 @@
 import uuid
 from django.conf import settings
-# from django.contrib.auth import get_user_model
 from django.core.exceptions import FieldError
 from django.db import models
 from django.utils.text import slugify
 from taggit.managers import TaggableManager
-
-
-# User = get_user_model()
 
 
 class PublishedManager(models.Manager):
@@ -21,7 +17,7 @@ class DraftsManager(models.Manager):
 
 
 class BetaManager(models.Manager):
-    def beta(self, *args, **kwargs):
+    def get_queryset(self, *args, **kwargs):
         return super().get_queryset().filter(status='beta')
 
 
@@ -32,8 +28,8 @@ class Article(models.Model):
     """
     READINESS_CHOICES = [('draft', 'Draft'), ('beta', 'Beta'), ('published', 'Published')]
 
-    uuid = models.UUIDField(primary_key=True, db_index=True, default=uuid.uuid4)
-    author = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='posts', on_delete=models.PROTECT)
+    id = models.UUIDField(primary_key=True, db_index=True, default=uuid.uuid4)
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='posts', on_delete=models.CASCADE)
     title = models.CharField(max_length=50)
     slug = models.SlugField(unique=True, null=True, blank=True, max_length=27)
     created = models.DateTimeField(auto_now_add=True)

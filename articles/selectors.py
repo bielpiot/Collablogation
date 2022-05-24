@@ -6,15 +6,15 @@ from .models import Article
 User = get_user_model()
 
 
-def draft_list(user: User) -> QuerySet[Article]:
-    pass
-
-
-def article_list(*, fetched_by: User, status: str, filters: None) -> QuerySet[Article]:
+def draft_list(*, fetched_by: User, filters=None) -> QuerySet[Article]:
     filters = filters or {}
-    post_ids = draft_list(user=fetched_by)
-    return Article.objects.all()
+    return Article.drafts.filter(author=User)
 
 
-def article_detail(*, fetched_by=User, article: Article):
+def article_list(*, fetched_by: User, filters=None) -> QuerySet[Article]:
+    filters = filters or {}
+    return Article.published.filter(filters)
+
+
+def article_detail(*, fetched_by: User, id: str) -> Article:
     pass
