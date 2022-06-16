@@ -7,7 +7,7 @@ from articles.models import Article
 
 
 class BaseComment(models.Model):
-    article = models.ForeignKey(Article, related_name='%(class)ss', on_delete=models.CASCADE)
+    article = models.ForeignKey(Article, related_name='%(class)ss', on_delete=models.CASCADE, editable=False)
     id = models.UUIDField(primary_key=True, default=uuid.uuid4())
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     contents = models.TextField()
@@ -19,12 +19,12 @@ class BaseComment(models.Model):
     class Meta:
         abstract = True
 
-    # TODO Db trigger on top of clean validation?
-
     def clean(self):
-        if self.parent_comment:
-            if not self.article == self.parent_comment.article:
-                raise ValidationError('You cannot comment different article than chosen parent comment does')
+        pass
+
+    @property
+    def has_children(self):
+        return self._meta.model.objects.filter(parent_comment=self).exists()
 
 
 class Comment(BaseComment):
@@ -39,4 +39,4 @@ class InlineComment(BaseComment):
         return f'{self.author} beta comment on {self.post}'
 
     def clean(self):
-        pass
+        super().clean()

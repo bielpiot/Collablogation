@@ -32,7 +32,7 @@ class GroupsAndPermissionCreationTest(TestCase):
         self.assertEqual(super_group_q.exists(), 1)
 
         # assert correct and only one user in the group
-        self.assertEqual(len(super_group.user_set.all()), 1)
+        self.assertEqual(super_group.user_set.count(), 1)
         self.assertIn(test_user_1, super_group.user_set.all())
         self.assertNotIn(test_user_2, super_group.user_set.all())
 

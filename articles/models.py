@@ -8,27 +8,41 @@ from taggit.managers import TaggableManager
 
 class PublishedManager(models.Manager):
     def get_queryset(self, *args, **kwargs):
-        return super().get_queryset().filter(status='published')
+        return super().get_queryset().filter(status=PUBLISHED)
 
 
 class DraftsManager(models.Manager):
     def get_queryset(self, *args, **kwargs):
-        return super().get_queryset().filter(status='draft')
+        return super().get_queryset().filter(status=DRAFT)
 
 
 class BetaManager(models.Manager):
     def get_queryset(self, *args, **kwargs):
-        return super().get_queryset().filter(status='beta')
+        return super().get_queryset().filter(status=BETA)
 
 
-# Create your models here.
+class ArchivedManager(models.Manager):
+    def get_queryset(self, *args, **kwargs):
+        return super().get_queryset().filter(status=ARCHIVED)
+
+
 class Article(models.Model):
     """
     Model dedicated to store blog posts data
     """
-    READINESS_CHOICES = [('draft', 'Draft'), ('beta', 'Beta'), ('published', 'Published')]
+    DRAFT = 'draft',
+    BETA = 'beta'
+    PUBLISHED = 'published'
+    ARCHIVED = 'archived'
 
-    id = models.UUIDField(primary_key=True, db_index=True, default=uuid.uuid4)
+    READINESS_CHOICES = [
+        (DRAFT, 'Draft'),
+        (BETA, 'Beta'),
+        (PUBLISHED, 'Published'),
+        (ARCHIVED, 'Archived')
+    ]
+
+    id = models.UUIDField(primary_key=True, db_index=True, default=uuid.uuid4, editable=False)
     author = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='posts', on_delete=models.CASCADE)
     title = models.CharField(max_length=50)
     slug = models.SlugField(unique=True, null=True, blank=True, max_length=27)
@@ -44,9 +58,7 @@ class Article(models.Model):
     published = PublishedManager()
     beta = BetaManager()
     drafts = DraftsManager()
-
-    def publish(self):
-        pass
+    archived = ArchivedManager()
 
     def _create_unique_slug(self):
         max_length = self._meta.get_field('slug').max_length

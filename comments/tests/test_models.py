@@ -25,3 +25,22 @@ class ParentCommentTest(TestCase):
             Comment.objects.create(article=self.test_article2, parent_comment=self.test_comment1,
                                    author=self.test_author, contents='no pass!')
         self.assertEqual(len(q), 2)
+
+
+class HasChildrenPropertyTest(TestCase):
+    def setUp(self) -> None:
+        self.user1 = UserFactory()
+        self.user2 = UserFactory()
+        self.article = ArticleFactory()
+        self.comment1 = Comment.objects.create(author=self.user1,
+                                               article=self.article,
+                                               parent_comment=None,
+                                               contents='aa')
+        self.comment2 = Comment.objects.create(author=self.user2,
+                                               article=self.article,
+                                               parent_comment=self.comment1,
+                                               contents='bb')
+
+    def test_has_children(self):
+        self.assertEqual(comment1.has_children, 1)
+        self.assertEqual(comment2.has_children, 2)

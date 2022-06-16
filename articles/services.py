@@ -6,7 +6,8 @@ from django.contrib.auth.models import Group
 from django.contrib.contenttypes.models import ContentType
 from .models import Article
 from .perm_constants import article_permissions_pattern, full_permissions
-from ..accounts.utils import generate_groups_and_permissions
+from ..articles.utils import generate_groups_and_permissions
+from ..api.utils import get_object
 
 User = get_user_model()
 
@@ -24,6 +25,7 @@ def create_perms_and_groups_for_article(*, instance: Article, **kwargs) -> None:
 
 
 def article_create(*, user: User, **kwargs):
+    """all logic behind Article creation - restrictions, relations etc"""
     article = Article.objects.create(author=User, **kwargs)
     article.status = 'draft'
     create_perms_and_groups_for_article(instance=article)
@@ -32,10 +34,31 @@ def article_create(*, user: User, **kwargs):
     return article
 
 
+def clean_pre_publish_formatting(*, article: Article) -> Article:
+    pass
+
+
 def article_publish(*, article: Article) -> Article:
     """
     Service modifying Post instance before publishing:
     1. clear all <span> elements serving as hooks for inline comments
     """
-    Article.status = 'published'
-    Article.published = timezone.now()
+    clean_pre_publish_formatting(article)
+    article.status = 'published'
+    article.published = timezone.now()
+    article.save()
+    return article
+
+
+def article_edit(*, article: Article, user: User) -> Article:
+    """all logic behind Article edition - restrictions, relations etc"""
+    pass
+
+
+def article_delete(*, article: Article, user: User):
+    """all logic behind Article deletion - restrictions, relations etc"""
+    pass
+
+
+def article_archive(*, article: Article, user: User) -> Article:
+    pass
