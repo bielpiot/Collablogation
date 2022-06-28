@@ -23,7 +23,7 @@ SECRET_KEY = get_env("SECRET_KEY")
 
 DEBUG = True
 
-AUTHENTICATION_BACKENDS = ["Collablogation.accounts.auth_backends.ArticleBackend"]
+AUTHENTICATION_BACKENDS = ["accounts.auth_backends.ArticleBackend"]
 
 ALLOWED_HOSTS = []
 
@@ -42,7 +42,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'djoser',
     'taggit',
-    'django-filters',
+    'django_filters',
 ]
 
 MIDDLEWARE = [

@@ -1,6 +1,7 @@
 from ..articles.apis import ArticleListApi, ArticleDetailApi, ArticleCreateAPI, ArticleChangeApi
 from ..comments.apis import CommentListApi, CommentDetailApi, CommentCreateApi, CommentUpdateApi
 from django.urls import include, path
+from ..accounts import urls as acc_urls
 
 comment_patterns = [
     path('', CommentListApi.as_view()),
@@ -21,6 +22,7 @@ article_patterns = [
 
 urlpatterns = [
     path('create/', ArticleCreateAPI.as_view()),
+    path('user/', include(acc_urls)),
     path('main/', include(article_patterns), {'status': 'published'}),
     path('beta/', include(article_patterns), {'status': 'beta'}),
     path('drafts/', include(article_patterns), {'status': 'draft'}),

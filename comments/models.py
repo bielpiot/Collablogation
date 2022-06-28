@@ -8,7 +8,7 @@ from articles.models import Article
 
 class BaseComment(models.Model):
     article = models.ForeignKey(Article, related_name='%(class)ss', on_delete=models.CASCADE, editable=False)
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4())
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4)
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     contents = models.TextField()
     created = models.DateTimeField(auto_now_add=True)

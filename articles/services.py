@@ -5,9 +5,9 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.contrib.contenttypes.models import ContentType
 from .models import Article
-from .perm_constants import article_permissions_pattern, full_permissions
-from ..articles.utils import generate_groups_and_permissions
-from ..api.utils import get_object
+from .perm_constants import article_permissions_pattern, full_edit_permission, FULL_ACCESS_SUFFIX
+from articles.utils import generate_groups_and_permissions
+from api.utils import get_object
 
 User = get_user_model()
 
@@ -17,10 +17,9 @@ def create_perms_and_groups_for_article(*, instance: Article, **kwargs) -> None:
         along with group assignment for article author"""
     content_type = ContentType.objects.get(model=instance._meta.model_name)
     generate_groups_and_permissions(instance_name=instance.id,
-                                    permissions_pattern=kwargs.get(perm_pattern, default=article_permissions_pattern),
+                                    permissions_pattern=kwargs.get('perm_pattern', article_permissions_pattern),
                                     content_type=content_type)
-    codename_suffix, _ = full_permissions
-    super_group = Group.objects.get(name=instance.id + codename_suffix)
+    super_group = Group.objects.get(name=str(instance.id) + FULL_ACCESS_SUFFIX)
     instance.author.groups.add(super_group)
 
 
@@ -35,17 +34,20 @@ def article_create(*, user: User, **kwargs):
 
 
 def clean_pre_publish_formatting(*, article: Article) -> Article:
+    # remove all inline comments ->
+    contents = article.contents
     pass
 
 
 def article_publish(*, article: Article) -> Article:
     """
     Service modifying Post instance before publishing:
-    1. clear all <span> elements serving as hooks for inline comments
+
     """
     clean_pre_publish_formatting(article)
     article.status = 'published'
     article.published = timezone.now()
+    article.full_clean()
     article.save()
     return article
 

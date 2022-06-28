@@ -1,117 +1,128 @@
-from typing import Dict, List
-from jsondiff import insert, delete, replace, diff as jdiff
+from typing import Dict, List, Iterable
+from itertools import zip_longest
 
 
-def merge_json_values_under_key(json: Dict, filter_key: str) -> str:
+def merge_iterable_values_under_key(*, iterable: Iterable, filter_key: str) -> str:
     """
-    returns values merged by key from json
+    Function serves as a integrity check. Returns values under given key merged, for example:
+    [{"text": "Random text "},
+     {
+         "type": "link",
+         "url": ". .",
+         "children": [
+             {"text": "that continues within the link", "font-size": 12}
+         ]
+     }] -> 'Random text that continues within the link'
     """
 
-    def _walk_json_tree(input_json, filter_key=filter_key):
-        if isinstance(input_json, list):
-            for elem in input_json:
-                yield from _walk_json_tree(elem)
-        elif isinstance(input_json, dict):
-            for key, value in input_json.items():
+    def _walk_tree(input_iterable, filter_key=filter_key):
+        if isinstance(input_iterable, list):
+            for elem in input_iterable:
+                yield from _walk_tree(elem)
+        elif isinstance(input_iterable, dict):
+            for key, value in input_iterable.items():
                 if isinstance(value, str):
                     if key == filter_key:
                         yield value
                 else:
-                    yield from _walk_json_tree(value)
+                    yield from _walk_tree(value)
 
-    return ''.join([*_walk_json_tree(json)])
+    return ''.join([*_walk_tree(iterable)])
 
 
-def get_all_keys_from_nested_json(json: dict) -> List:
+def group_nodes_by_matching_string_values(*, base: Iterable, modified: Iterable, filter_key="text"):
     """
-    returns set of all keys in json
+    Given list of nodes (dict), groups them based on values of given str key; concatenated value
+    is to match value found in comparison base node.
     """
-
-    def _walk_json_tree(input_json):
-        if isinstance(input_json, list):
-            for elem in input_json:
-                yield from _walk_json_tree(elem)
-        elif isinstance(input_json, dict):
-            for key, value in input_json.items():
-                if isinstance(value, (str, bool)):
-                    yield key
-                else:
-                    yield from _walk_json_tree(value)
-
-    return [*_walk_json_tree(json)]
-
-
-def compare_two_json_arrays(base, modified, thread_id):
-    """
-    record changes introduced to json compared to input base file
-    1. raw text not changed
-    2. no new attributes - set of attributes remain the same
-    3. new nodes introduced by text nodes separation - can only have adjacent nodes attributes
-    4. only new attributes are thread_it: true
-    5. no deletion
-    6. inserts contain exclusively text-based nodes (text + thread_id + other attributes copied)
-    """
-    diff = jdiff(base, modified)
-    text_base = merge_json_values_under_key(base, "text")
-    text_modified = merge_json_values_under_key(modified, "text")
-
-    condition1 = text_base == text_modified
-    condition2 = delete not in diff
-    condition3 = insert in diff or (len(diff) == 1 and f"thread_{thread_id}" in diff[
-        0])  # if no insert then diff is always {o: {"thread_":True}}
-    condition4 = 4  # inserts contains 'text' and 'thread_' + copied attrs
-
-
-def group_nodes_by_matching_values(base, modified, key="text"):
     base_iter = iter(base)
     modified_iter = iter(modified)
     grouped = []
     while 1:
         try:
             to_match, matching = next(base_iter), next(modified_iter)
-            target_str, matching_str = to_match[key], matching[key]
+            target_str, matching_str = to_match[filter_key], matching[filter_key]
             group = [matching]
             while matching_str != target_str:
-                matching = next(matching)
+                matching = next(modified_iter)
                 group.append(matching)
-                matching_str += matching[key]
+                matching_str += matching[filter_key]
             grouped.append(group)
         except StopIteration:
             return grouped
 
 
-def flatten_json(json) -> List[Dict]:
+def trim_two_iterables_from_common_values(*, base: Iterable, modified: Iterable):
     """
-    returns list of dicts, in-line, children disregarded
+    Given two iterables trims them left and right from common values.
+    For example: ["a","b","d","c","e","f"], ["a", "b", "c", "c", "d", "f", "f", "f"] ->
+    ["d", "c", "e"], ["c", "c", "d", "f", "f"]
+
     """
 
-    def _walk_tree_and(input_json):
-        if isinstance(input_json, list):
-            for elem in input_json:
-                yield from _walk_tree_and(elem)
-        elif isinstance(input_json, dict):
-            for key, value in input_json.items():
-                if isinstance(value, (list, dict)):
-                    yield 'start of nest'
-                    yield from _walk_tree_and(value)
-                    yield 'end of nest'
-                else:
-                    yield {key: value}
-        else:
-            return
+    def _drop_until_different(iterable1, iterable2):
+        index = 0
+        mismatch = False
+        for elem_in_1, elem_in_2 in zip(iterable1, iterable2):
+            if elem_in_1 != elem_in_2:
+                mismatch = True
+                break
+            index += 1
+        return (iterable1[index:], iterable2[index:]) if mismatch else (iterable1[:0], iterable2[:0])
 
-    return [*_walk_tree_and(json)]
+    trim_left = _drop_until_different(base, modified)
+    trimmed_left_1, trimmed_left_2 = trim_left
+    trim_right = _drop_until_different([*reversed(trimmed_left_1)], [*reversed(trimmed_left_2)])
+    trimmed_1, trimmed_2 = trim_right
+    return [*reversed(trimmed_1)], [*reversed(trimmed_2)]
 
 
-def get_nodes_with_given_key(json, key="text", nest="children"):
-    def _walk_tree(input_json, key=key, nest=nest):
-        if isinstance(input_json, list):
-            for elem in input_json:
+def get_nodes_with_given_key(iterable: Iterable, filter_key: str = "text") -> List:
+    """
+    Yields nodes containing given key.
+    """
+
+    def _walk_tree(input_iterable, filter_key=filter_key):
+        if isinstance(input_iterable, list):
+            for elem in input_iterable:
                 yield from _walk_tree(elem)
-        elif isinstance(input_json, dict):
-            if key in input_json:
-                yield input_json
-            elif nest in input_json:
-                yield from _walk_tree(input_json[nest])
+        elif isinstance(input_iterable, dict):
+            if filter_key in input_iterable:
+                yield input_iterable
+            else:
+                for value in input_iterable.values():
+                    yield from _walk_tree(value)
 
-    return [*_walk_tree(json)]
+    return [*_walk_tree(iterable)]
+
+
+def remove_nodes_with_given_key(*, iterable: Iterable, filter_key: str = "text") -> Iterable:
+    """
+    Deletes nodes with given key from nested iterable. Example, "text" as filter key:
+    [{"text": "Random text "},
+     {
+         "type": "link",
+         "url": ". .",
+         "children": [
+             {"text": "that continues within the link", "font-size": 12}
+         ]
+     }] ->
+     [{"type": "link",
+         "url": ". .",
+         "children": []
+        }]
+    """
+
+    def _walk_tree(input_iterable, filter_key=filter_key):
+        if isinstance(input_iterable, list):
+            for elem in input_iterable[:]:
+                if filter_key in elem:
+                    input_iterable.remove(elem)
+                else:
+                    _walk_tree(elem)
+        elif isinstance(input_iterable, dict):
+            for value in input_iterable.values():
+                _walk_tree(value)
+
+    _walk_tree(iterable)
+    return iterable

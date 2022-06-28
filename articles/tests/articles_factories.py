@@ -4,7 +4,7 @@ import factory
 from faker import Faker
 
 from ..models import Article
-from Collablogation.accounts.tests.accounts_factories import UserFactory
+from accounts.tests.accounts_factories import UserFactory
 
 faker = Faker()
 
@@ -17,9 +17,10 @@ def get_random_status():
 class ArticleFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Article
+        django_get_or_create = ('author',)
 
     author = factory.SubFactory(UserFactory)
-    title = factory.LazyAttribute(lambda _: faker.title())
+    title = factory.LazyAttribute(lambda _: faker.text(max_nb_chars=50))
     category = factory.LazyAttribute(lambda _: faker.word())
-    contents = factory.LazyAttribute(lambda _: faker.paragraph(nb=10))
+    contents = factory.LazyAttribute(lambda _: faker.paragraphs(nb=10))
     status = factory.LazyFunction(get_random_status)

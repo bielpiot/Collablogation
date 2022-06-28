@@ -1,4 +1,6 @@
 import uuid
+from django.contrib import auth
+from django.core.exceptions import PermissionDenied
 
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models

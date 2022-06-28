@@ -8,29 +8,29 @@ from taggit.managers import TaggableManager
 
 class PublishedManager(models.Manager):
     def get_queryset(self, *args, **kwargs):
-        return super().get_queryset().filter(status=PUBLISHED)
+        return super().get_queryset().filter(status=Article.PUBLISHED)
 
 
 class DraftsManager(models.Manager):
     def get_queryset(self, *args, **kwargs):
-        return super().get_queryset().filter(status=DRAFT)
+        return super().get_queryset().filter(status=Article.DRAFT)
 
 
 class BetaManager(models.Manager):
     def get_queryset(self, *args, **kwargs):
-        return super().get_queryset().filter(status=BETA)
+        return super().get_queryset().filter(status=Article.BETA)
 
 
 class ArchivedManager(models.Manager):
     def get_queryset(self, *args, **kwargs):
-        return super().get_queryset().filter(status=ARCHIVED)
+        return super().get_queryset().filter(status=Article.ARCHIVED)
 
 
 class Article(models.Model):
     """
     Model dedicated to store blog posts data
     """
-    DRAFT = 'draft',
+    DRAFT = 'draft'
     BETA = 'beta'
     PUBLISHED = 'published'
     ARCHIVED = 'archived'
@@ -59,6 +59,7 @@ class Article(models.Model):
     beta = BetaManager()
     drafts = DraftsManager()
     archived = ArchivedManager()
+    objects = models.Manager()
 
     def _create_unique_slug(self):
         max_length = self._meta.get_field('slug').max_length

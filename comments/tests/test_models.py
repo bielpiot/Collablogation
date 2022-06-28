@@ -2,8 +2,8 @@ from django.test import TestCase
 from django.db import IntegrityError
 from ..models import Comment, InlineComment
 from .comment_factories import CommentFactory
-from Collablogation.articles.tests.articles_factories import ArticleFactory
-from Collablogation.accounts.tests.accounts_factories import UserFactory
+from articles.tests.articles_factories import ArticleFactory
+from accounts.tests.accounts_factories import UserFactory
 from django.core.exceptions import ValidationError
 
 
@@ -16,15 +16,16 @@ class ParentCommentTest(TestCase):
 
     def test_parent_constraint(self):
         # proper comment creation
+        q = Comment.objects.all()
+        self.assertEqual(q.count(), 1)
         Comment.objects.create(article=self.test_article1, parent_comment=self.test_comment1,
                                author=self.test_author, contents='created, no problem')
-        q = Comment.objects.all()
-        self.assertEqual(len(q), 2)
+        self.assertEqual(q.count(), 2)
         # make sure comment pointing to different article than parent comment doesn't get created
         with self.assertRaises(ValidationError):
             Comment.objects.create(article=self.test_article2, parent_comment=self.test_comment1,
                                    author=self.test_author, contents='no pass!')
-        self.assertEqual(len(q), 2)
+        self.assertEqual(q.count(), 2)
 
 
 class HasChildrenPropertyTest(TestCase):
@@ -42,5 +43,5 @@ class HasChildrenPropertyTest(TestCase):
                                                contents='bb')
 
     def test_has_children(self):
-        self.assertEqual(comment1.has_children, 1)
-        self.assertEqual(comment2.has_children, 2)
+        self.assertEqual(self.comment1.has_children, 1)
+        self.assertEqual(self.comment2.has_children, 0)

@@ -51,7 +51,7 @@ class ArticleBackend(ModelBackend):
 
     def get_all_article_permissions(self, user_obj, article):
         return {
-            *self.get_user_article__permissions(user_obj, article),
+            *self.get_user_article_permissions(user_obj, article),
             *self.get_group_article_permissions(user_obj, article),
             *self.get_user_permissions(user_obj),
             *self.get_group_permissions(user_obj),
