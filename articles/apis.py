@@ -7,7 +7,7 @@ from rest_framework.status import HTTP_200_OK
 from .models import Article
 from .selectors import article_list, article_detail
 from .services import article_create, article_edit
-from ..api.utils import inline_serializer, get_object
+from Collablogation.common.utils import inline_serializer, get_object
 
 User = get_user_model()
 
@@ -58,17 +58,17 @@ class ArticleListApi(APIView):
 
 class ArticleDetailApi(APIView):
     class OutputSerializer(serializers.ModelSerializer):
-        comments = inline_serializer(many=True, fields={
-            'id': serializers.UUIDField(),
-            'author': serializers.PrimaryKeyRelatedField(),
-            'contents': serializers.CharField(),
-            'parent_comment': serializers.PrimaryKeyRelatedField()
-        })
+        # comments = inline_serializer(many=True, fields={
+        #     'id': serializers.UUIDField(),
+        #     'author': serializers.PrimaryKeyRelatedField(),
+        #     'contents': serializers.CharField(),
+        #     'parent_comment': serializers.PrimaryKeyRelatedField()
+        # })
 
         class Meta:
             model = Article
             fields = ['id', 'author', 'title', 'slug', 'created', 'updated',
-                      'publish_date', 'category', 'contents', 'status', 'comments']
+                      'publish_date', 'category', 'contents', 'status']
 
     def get(self, request, slug):
         article = article_detail(fetched_by=request.user, slug=slug)

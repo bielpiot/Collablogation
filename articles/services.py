@@ -34,8 +34,9 @@ def article_create(*, user: User, **kwargs):
 
 
 def clean_pre_publish_formatting(*, article: Article) -> Article:
-    # remove all inline comments ->
-    contents = article.contents
+    # remove all inline comments -> join() util to be implemented, basically concatenating
+    # adjacent text nodes with common formatting arguments (after given thread_ removal)
+    # contents = article.contents
     pass
 
 
@@ -58,9 +59,16 @@ def article_edit(*, article: Article, user: User) -> Article:
 
 
 def article_delete(*, article: Article, user: User):
-    """all logic behind Article deletion - restrictions, relations etc"""
+    """all logic behind Article deletion - restrictions, relations etc.
+    Cannot be performed on published article
+    """
+
     pass
 
 
 def article_archive(*, article: Article, user: User) -> Article:
+    """
+    Can be performed on published/beta article.
+    Article becomes uneditable, access only for ...
+    """
     pass

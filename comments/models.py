@@ -14,17 +14,19 @@ class BaseComment(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
     parent_comment = models.ForeignKey('self', related_name='replies', related_query_name='reply',
-                                       null=True, on_delete=models.CASCADE)
+                                       null=True, blank=True, on_delete=models.CASCADE)
+    frozen = models.BooleanField(default=False)
+    thread_id = models.UUIDField(default=self.id)
 
     class Meta:
         abstract = True
 
-    def clean(self):
-        pass
-
     @property
     def has_children(self):
         return self._meta.model.objects.filter(parent_comment=self).exists()
+
+    def save(self):
+        pass
 
 
 class Comment(BaseComment):

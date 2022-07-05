@@ -1,11 +1,11 @@
-from .models import Comment, InlineComment
+from .models import Comment
 from rest_framework import serializers
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from .selectors import comment_list, comment_detail
 from .services import comment_create
 from ..articles.models import Article
-from ..api.utils import get_object
+from Collablogation.common.utils import get_object
 
 
 class CommentListApi(APIView):
@@ -16,7 +16,7 @@ class CommentListApi(APIView):
 
     def get(self, request, slug):
         article_id = Article.objects.get(slug=slug).pk
-        comments = comment_list(user=request.user, article_id=article)
+        comments = comment_list(user=request.user, article_id=article_id)
         data = self.OutputSerializer(comments, many=True).data
         return Response(data)
 
@@ -27,8 +27,10 @@ class CommentDetailApi(APIView):
             model = Comment
             fields = ['id', 'author', 'contents', 'created', 'updated', 'parent_coment']
 
-    def get(self, request, comment_id):
-        pass
+    def get(self, request, pk):
+        comment = comment_detail(user=request.user, comment_id=pk)
+        data = self.OutputSerializer(comment)
+        return Response(data)
 
 
 class CommentCreateApi(APIView):

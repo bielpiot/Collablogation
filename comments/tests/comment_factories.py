@@ -16,3 +16,14 @@ class CommentFactory(factory.django.DjangoModelFactory):
     author = factory.SubFactory(UserFactory)
     contents = factory.LazyAttribute(lambda _: faker.paragraphs(nb=10))
     parent_comment = factory.LazyAttribute(lambda _: CommentFactory(parent_comment=None))
+
+
+class InlineCommentFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = InlineComment
+
+    article = factory.SubFactory(ArticleFactory)
+    author = factory.SubFactory(UserFactory)
+    contents = factory.LazyAttribute(lambda _: faker.paragraphs(nb=5))
+    parent_comment = factory.LazyAttribute(lambda _: InlineCommentFactory(parent_comment=None))
+    # thread_id = parent_comment.id

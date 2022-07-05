@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'comments.apps.CommentsConfig',
     'accounts.apps.AccountsConfig',
     'api.apps.ApiConfig',
+    'common.apps.CommonConfig',
     'rest_framework',
     'rest_framework_simplejwt',
     'djoser',
