@@ -1,13 +1,11 @@
-from django.test import TestCase
-from django.db import IntegrityError
-from ..models import Comment, InlineComment
-from .comment_factories import CommentFactory
-from articles.tests.articles_factories import ArticleFactory
 from accounts.tests.accounts_factories import UserFactory
-from django.core.exceptions import ValidationError
+from articles.tests.articles_factories import ArticleFactory
+from django.test import TestCase
+
+from ..models import Comment
 
 
-class HasChildrenPropertyTest(TestCase):
+class CommentModelsTest(TestCase):
     def setUp(self) -> None:
         self.user1 = UserFactory()
         self.user2 = UserFactory()
@@ -24,3 +22,11 @@ class HasChildrenPropertyTest(TestCase):
     def test_has_children(self):
         self.assertEqual(self.comment1.has_children, 1)
         self.assertEqual(self.comment2.has_children, 0)
+
+    def test_thread_id_assignment(self):
+        self.assertEqual(self.comment1.thread_id, self.comment1.id)
+        self.assertEqual(self.comment2.thread_id, self.comment1.thread_id)
+
+    def test_uid_creation(self):
+        self.assertNotEqual(self.comment1.uid, self.comment2.uid)
+        self.assertEqual(len(self.comment1.uid), 22)

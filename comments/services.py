@@ -1,10 +1,10 @@
-from deepdiff import DeepDiff
-from typing import Iterable, List, Dict
+from typing import Iterable, Dict, Any
+
+from articles.models import Article
+from common.services import model_update
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import Permission
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
-from uuid import uuid4
 
 from .models import InlineComment, Comment
 from .utils import (merge_iterable_values_under_key,
@@ -12,15 +12,8 @@ from .utils import (merge_iterable_values_under_key,
                     trim_two_iterables_from_common_values,
                     get_nodes_with_given_key,
                     remove_nodes_with_given_key)
-from common.services import model_update
-from articles.models import Article
-from articles.perm_constants import view_permission, add_inline_comments_permission
-from api.utils import get_object
 
 User = get_user_model()
-
-art_view_suffix, _ = view_permission
-add_inline_comment_suffix, _ = add_inline_comments_permission
 
 
 def comment_validate_article_consistency(*, article: Article, parent_article: Article) -> None:
@@ -31,6 +24,7 @@ def comment_validate_article_consistency(*, article: Article, parent_article: Ar
 def comment_freeze(*, comment: Comment):
     comment.contents = 'Comment deleted'
     comment.frozen = True
+    comment.save()
     return comment
 
 
@@ -38,13 +32,8 @@ def comment_create(*,
                    user: User,
                    article: Article,
                    parent_comment: Comment = None,
-                   perm_suffix: str = art_view_suffix,
                    **kwargs
                    ) -> Comment:
-    article_id = article.id
-    codename = str(article_id) + perm_suffix
-    if not (user.has_article_perm(codename, article=article) or article.status == 'published'):
-        raise PermissionDenied()
     if parent_comment:
         comment_validate_article_consistency(article=article,
                                              parent_article=parent_comment.article)
@@ -56,22 +45,20 @@ def comment_create(*,
 
 def comment_update(*,
                    user: User,
-                   article: Article,
                    comment: Comment,
-                   fields: List[str],
                    data: Dict[str, Any]
                    ) -> Comment:
     # action not possible if comment has been answered (or is_staff, ofc)
-    if (comment.has_children and not user.is_staff) or not user == comment.author or comment.frozen:
+    if comment.has_children or not user == comment.author or comment.frozen:
         raise PermissionDenied('You cannot modify this comment')
-    comment, was_updated = model_update(instance=comment, fields=fields, data=data)
+    updated_comment, was_updated = model_update(instance=comment, fields=fields, data=data)
     if not was_updated:
         pass
-    return comment
+    return updated_comment
 
 
 def comment_delete(*, user: User, comment: Comment):
-    if not (user == comment.author or user.is_staff):
+    if not user == comment.author or comment.frozen:
         raise PermissionDenied("Action not allowed")
     if comment.has_children:
         freeze_comment(comment=comment)
@@ -128,21 +115,13 @@ def modified_article_body_is_valid(*, base: Iterable, modified: Iterable, inline
 
 def inline_comment_create(*,
                           user: User,
-                          article: Article,
-                          perm_suffix: str = add_inline_comment_suffix,
+                          article_id: str,
                           parent_comment: InlineComment = None,
                           modified_article_contents: Iterable = None,
                           **kwargs) -> InlineComment:
-    article_id = article.id
-    codename = article_id + perm_suffix
-    if not user.has_article_perm(codename):
-        raise PermissionDenied("You don't have permission to comment this article")
-
     article = Article.objects.select_for_update().filter(id=article_id)
-    thread_id = None
 
     if parent_comment:
-        thread_id = parent_comment.thread_id
         comment_validate_article_consistency(article=article, parent_article=parent_comment.article)
         if not modified_article_body_is_valid(base=article_conents, modified=modified_article_contents):
             raise ValidationError("Disallowed changes made in article contents!")
@@ -152,10 +131,9 @@ def inline_comment_create(*,
         # TODO mind the json processing - dumps/loads etc. More steps potentially needed.
         article.full_clean()
         article.save()
-        inline_comment = InlineComment.objects.create(user=User, article=article,
+        inline_comment = InlineComment.objects.create(user=user, article=article,
                                                       parent_comment=parent_comment,
                                                       **kwargs)
-        inline_comment.thread_id = thread_id or inline_comment.id
         inline_comment.full_clean()
         inline_comment.save()
 

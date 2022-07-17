@@ -1,12 +1,11 @@
+from accounts.tests.accounts_factories import UserFactory
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, ContentType
 from django.test import TestCase
 
 from .articles_factories import ArticleFactory
 from ..perm_constants import article_permissions_pattern
-from accounts.tests.accounts_factories import UserFactory
 from ..utils import generate_groups_and_permissions
-from ..models import Article
 
 User = get_user_model()
 
@@ -37,6 +36,3 @@ class GroupsAndPermissionCreationTest(TestCase):
         self.assertEqual(super_group.user_set.count(), 1)
         self.assertIn(test_user_1, super_group.user_set.all())
         self.assertNotIn(test_user_2, super_group.user_set.all())
-
-        # assert permission existence
-

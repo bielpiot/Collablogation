@@ -1,7 +1,7 @@
 # mapping for permissions and permission groups
 view_permission = ('_can_view_permission', 'Can view ')
 full_edit_permission = ('_can_edit_permission', 'Can edit ')
-add_inline_comments_permission = ('_can_hook_inline_comments_permission', 'Can hook inline comments in ')
+add_inline_comments_permission = ('_can_add_inline_comments_permission', 'Can hook inline comments in ')
 delete_permission = ('_can_delete_permission', 'Can delete ')
 
 full_permissions = [view_permission, full_edit_permission, delete_permission, add_inline_comments_permission]

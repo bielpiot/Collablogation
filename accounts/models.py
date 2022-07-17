@@ -1,16 +1,15 @@
 import uuid
-from django.contrib import auth
-from django.core.exceptions import PermissionDenied
 
+from articles.models import Article
+from django.contrib import auth
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
+from django.core.exceptions import PermissionDenied
 from django.db import models
 from django.utils import timezone
 from versatileimagefield.fields import VersatileImageField
 
-from articles.models import Article
 
-
-def _user_has_article_perm(user, perm, article):
+def _user_has_article_perm(user, perm):
     """
     A backend can raise `PermissionDenied` to short-circuit permission checking.
     """
@@ -18,7 +17,7 @@ def _user_has_article_perm(user, perm, article):
         if not hasattr(backend, "has_article_perm"):
             continue
         try:
-            if backend.has_article_perm(user, perm, article):
+            if backend.has_article_perm(user, perm):
                 return True
         except PermissionDenied:
             return False
@@ -83,10 +82,10 @@ class User(AbstractBaseUser, PermissionsMixin):
     def __str__(self):
         return self.username
 
-    def has_article_perm(self, perm, article):
+    def has_article_perm(self, perm):
         if self.is_active and self.is_superuser:
             return True
-        return _user_has_article_perm(self, perm, article)
+        return _user_has_article_perm(self, perm)
 
 
 class Follow(models.Model):

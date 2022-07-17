@@ -1,7 +1,7 @@
+from articles.models import Article
+from django.contrib.auth import get_user_model
 from django.contrib.auth.backends import ModelBackend
 from django.contrib.auth.models import Permission
-from django.contrib.auth import get_user_model
-from django.db.models import Q
 
 
 class ArticleBackend(ModelBackend):
@@ -58,5 +58,7 @@ class ArticleBackend(ModelBackend):
             # *self.get_group_permissions(user_obj),
         }
 
-    def has_article_perm(self, user_obj, perm, article):
+    def has_article_perm(self, user_obj, perm):
+        art_id = perm[:36]
+        article = Article.objects.get(id=art_id)
         return perm in self.get_all_article_permissions(user_obj, article)

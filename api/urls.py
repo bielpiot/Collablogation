@@ -1,30 +1,29 @@
-from ..articles.apis import ArticleListApi, ArticleDetailApi, ArticleCreateAPI, ArticleChangeApi
-from ..comments.apis import CommentListApi, CommentDetailApi, CommentCreateApi, CommentUpdateApi
+from accounts import urls as acc_urls
+from articles.apis import ArticleListApi, ArticleDetailApi, ArticleCreateAPI, ArticleUpdateApi, ArticleDeleteApi
+from comments.apis import CommentListApi, CommentDetailApi, CommentCreateApi, CommentUpdateApi, CommentDeleteApi
 from django.urls import include, path
-from ..accounts import urls as acc_urls
 
 comment_patterns = [
-    path('', CommentListApi.as_view()),
-    path('create/', CommentCreateApi.as_view()),
-    path('<uuid:id>/', CommentDetailApi.as_view()),
-    path('<uuid:id>/modify/', CommentChangeApi.as_view()),
-    path('<uuid:id>/delete/', CommentDeleteApi.as_view())
+    path('', CommentListApi.as_view(), name='list'),
+    path('create/', CommentCreateApi.as_view(), name='create'),
+    path('<str:comment_uid>/', CommentDetailApi.as_view(), name='detail'),
+    path('<str:comment_uid>/modify/', CommentUpdateApi.as_view(), name='update'),
+    path('<str:comment_uid>/delete/', CommentDeleteApi.as_view(), name='delete')
 ]
 
 article_patterns = [
-    path('', ArticleListApi.as_view()),
-    path('<slug:slug>', ArticleDetailApi.as_view()),
-    path('<slug:slug>/modify/', ArticleChangeApi.as_view()),
-    path('<slug:slug>/delete/', ArticleDeleteApi.as_view()),
-    path('comments/', include(comment_patterns))
+    path('', ArticleListApi.as_view(), name='list'),
+    path('<slug:slug>', ArticleDetailApi.as_view(), name='detail'),
+    path('<slug:slug>/modify/', ArticleUpdateApi.as_view(), name='update'),
+    path('<slug:slug>/delete/', ArticleDeleteApi.as_view(), name='delete'),
+    path('<slug:slug>/comments/', include((comment_patterns, 'comments'), namespace='comments'))
 
 ]
 
 urlpatterns = [
     path('create/', ArticleCreateAPI.as_view()),
     path('user/', include(acc_urls)),
-    path('main/', include(article_patterns), {'status': 'published'}),
-    path('beta/', include(article_patterns), {'status': 'beta'}),
-    path('drafts/', include(article_patterns), {'status': 'draft'}),
-    path('archived/', include(article_patterns), {'status': 'archived'}),
+    path('main/', include((article_patterns, 'articles'), namespace='beta'), {'status': 'beta'}),
+    path('drafts/', include((article_patterns, 'articles'), namespace='drafts'), {'status': 'draft'}),
+    path('archived/', include((article_patterns, 'articles'), namespace='archived'), {'status': 'archived'}),
 ]
