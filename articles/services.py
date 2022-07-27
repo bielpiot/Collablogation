@@ -1,13 +1,14 @@
 from typing import Any, Dict
 
 from articles.utils import generate_groups_and_permissions
+from common.services import model_update
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.contrib.contenttypes.models import ContentType
 from django.utils import timezone
 
+from Collablogation.accounts.perm_constants import article_permissions_pattern, FULL_ACCESS_SUFFIX
 from .models import Article
-from .perm_constants import article_permissions_pattern, FULL_ACCESS_SUFFIX
 
 User = get_user_model()
 
@@ -34,11 +35,12 @@ def remove_users_from_article_perm_groups(*, article: Article):
 
 def article_create(*, user: User, **kwargs):
     """all logic behind Article creation - restrictions, relations etc"""
-    article = Article.objects.create(author=User, **kwargs)
-    article.status = 'draft'
-    create_perms_and_groups_for_article(instance=article)
+    # TODO transaction atomic? article need to have its groups always
+    article = Article.objects.create(author=user, **kwargs)
+    article.status = Article.DRAFT
     article.full_clean()
     article.save()
+    create_perms_and_groups_for_article(instance=article)
     return article
 
 
@@ -50,45 +52,32 @@ def clean_pre_publish_formatting(*, article: Article) -> Article:
     pass
 
 
-def article_archive(*, article: Article) -> Article:
-    """
-    Can be performed on published/beta article.
-    Article becomes uneditable, access only for full access group members, read only
-    """
-    article.frozen = True
-    return article
-
-
-def article_publish(*, article: Article) -> Article:
-    """
-    Service modifying Post instance before publishing:
-
-    """
-    # clean_pre_publish_formatting(article=article)
-    article.published = timezone.now()
-    return article
-
-
 def article_delete(*, article: Article, user: User):
     """all logic behind Article deletion - restrictions, relations etc.
-    Cannot be performed on published article
-    remove all users from access groups except author?
+    Cannot be performed on published article - authorization
+    clear perms/delete related group objects?
     """
     article.delete()
 
 
 def article_update(*, article: Article,
-                   user: User,
                    data: Dict[str, Any]
                    ) -> Article:
     """all logic behind Article edition - restrictions, relations etc"""
-    # TODO transaction atomic for series of changes like publishing then updating etc
     if article.frozen:
         raise PermissionError('This resource cannot be modified anymore')
-    status = data.get('status', None)
-    if status == Article.ARCHIVED:
-        article_archive(article=article)
-    if status == Article.PUBLISHED:
-        article_publish(article=article)
+    old_status = getattr(article, 'status')
+    status = data.get('status', old_status)
+    status_has_changed = (old_status != status)
+    fields = ['contents', 'status', 'category', 'tags', 'title']
+    if status == Article.ARCHIVED and status_has_changed:
+        data['frozen'] = True
+        fields.append('frozen')
+    if status == Article.PUBLISHED and status_has_changed:
+        data['publish_date'] = timezone.now()
+        fields.append('publish_date')
+        # clean_pre_publish_formatting(article=article) TODO add when hooking beta section
     updated_article, was_updated = model_update(instance=article, fields=fields, data=data)
+    if not was_updated:
+        return article
     return updated_article

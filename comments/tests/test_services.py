@@ -47,7 +47,7 @@ class CommentCreateTest(TestCase):
 class CommentUpdateTest(TestCase):
     def setUp(self):
         self.test_comment1 = CommentFactory()
-        self.test_comment2 = CommentFactory(parent=self.test_comment1)
+        self.test_comment2 = CommentFactory(parent_comment=self.test_comment1)
         self.test_author1 = self.test_comment1.author
         self.test_author2 = self.test_comment2.author
         self.test_data = {'contents': 'Blablabla'}
@@ -67,8 +67,8 @@ class CommentUpdateTest(TestCase):
 
 class CommentDeleteTest(TestCase):
     def setUp(self):
-        self.test_comment1 = CommentFactory()
-        self.test_comment2 = CommentFactory(parent=self.test_comment1)
+        self.test_comment1 = CommentFactory(parent_comment=None)
+        self.test_comment2 = CommentFactory(parent_comment=self.test_comment1)
         self.test_author1 = self.test_comment1.author
         self.test_author2 = self.test_comment2.author
 

@@ -2,7 +2,7 @@ from functools import wraps
 from typing import Tuple
 
 from articles.models import Article
-from common.utils import get_object
+# from common.utils import get_object
 from django.core.exceptions import PermissionDenied
 
 
@@ -15,15 +15,19 @@ def article_status_or_permission_required(*, permission: Tuple = None, status: T
     def decorator(drf_view):
         @wraps(drf_view)
         def _wrapped(request, *args, **kwargs):
-            article_slug = kwargs.get("slug")
-            article = get_object(Article, slug=article_slug)
+            article_slug = kwargs.get("article_slug")
+            # article = get_object(Article, slug=article_slug)
+            article = Article.objects.get(slug=article_slug)
             perm_condition = False
             status_condition = False
             message = kwargs.get('access_message', 'Action not allowed')
-            if permission:
-                suffix, _ = permission
-                perm = str(article.id) + suffix
-                perm_condition = request.user.has_article_perm(perm=perm)
+            if permission and request.user.is_authenticated:
+                try:
+                    suffix, _ = permission
+                    perm = str(article.id) + suffix
+                    perm_condition = request.user.is_authenticated and request.user.has_article_perm(perm=perm)
+                except AttributeError:
+                    perm_condition = perm_condition
             if status:
                 status_condition = (article.status in status)
 
@@ -46,15 +50,19 @@ def article_status_and_permission_required(*, permission: Tuple = None, status: 
     def decorator(drf_view):
         @wraps(drf_view)
         def _wrapped(request, *args, **kwargs):
-            article_slug = kwargs.get("slug")
-            article = get_object(Article, slug=article_slug)
+            article_slug = kwargs.get("article_slug")
+            # article = get_object(Article, slug=article_slug)
+            article = Article.objects.get(slug=article_slug)
             perm_condition = True
             status_condition = True
             message = kwargs.get('access_message', 'Action not allowed')
             if permission:
-                suffix, _ = permission
-                perm = str(article.id) + suffix
-                perm_condition = request.user.has_article_perm(perm=perm)
+                try:
+                    suffix, _ = permission
+                    perm = str(article.id) + suffix
+                    perm_condition = request.user.is_authenticated and request.user.has_article_perm(perm=perm)
+                except AttributeError:
+                    perm_condition = False
             if status:
                 status_condition = (article.status in status)
 

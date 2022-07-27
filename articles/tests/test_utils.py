@@ -3,8 +3,8 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, ContentType
 from django.test import TestCase
 
+from Collablogation.accounts.perm_constants import article_permissions_pattern
 from .articles_factories import ArticleFactory
-from ..perm_constants import article_permissions_pattern
 from ..utils import generate_groups_and_permissions
 
 User = get_user_model()

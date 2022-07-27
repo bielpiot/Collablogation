@@ -1,6 +1,8 @@
 from accounts.auth_decorators import article_status_or_permission_required, article_status_and_permission_required
+from accounts.perm_constants import full_edit_permission, view_permission, delete_permission
 from common.utils import get_object
 from django.contrib.auth import get_user_model
+from django.utils.decorators import method_decorator as md
 from rest_framework import serializers
 from rest_framework.response import Response
 from rest_framework.status import (HTTP_201_CREATED, HTTP_200_OK,
@@ -8,7 +10,6 @@ from rest_framework.status import (HTTP_201_CREATED, HTTP_200_OK,
 from rest_framework.views import APIView
 
 from .models import Article
-from .perm_constants import full_edit_permission, view_permission, delete_permission
 from .selectors import article_list, article_detail
 from .services import article_create, article_update, article_delete
 
@@ -33,19 +34,24 @@ class ArticleUpdateApi(APIView):
     class InputSerializer(serializers.ModelSerializer):
         class Meta:
             model = Article
-            fields = ['title', 'publish_date', 'category', 'contents']
+            fields = ['title', 'category', 'contents']
 
-    @article_status_and_permission_required(permission=full_edit_permission, status=(Article.DRAFT, Article.BETA))
-    def patch(self, request, slug):
-        article = get_object(Article, slug=slug)
-        article_update(article=article, user=request.user)
+    @md(article_status_and_permission_required(permission=full_edit_permission,
+                                               status=(Article.DRAFT, Article.BETA)))
+    def patch(self, request, article_slug):
+        article = get_object(Article, slug=article_slug)
+        if not self.InputSerializer.is_valid(raise_exception=True):
+            return Response(status=HTTP_400_BAD_REQUEST)
+        serialized = self.InputSerializer(data=request.data)
+        article_update(article=article, data=serialized.validated_data)
+        return Response(status=HTTP_200_OK)
 
 
 class ArticleListApi(APIView):
     class OutputSerializer(serializers.ModelSerializer):
         class Meta:
             model = Article
-            fields = ['id', 'title', 'author', 'category']
+            fields = ['id', 'title', 'author', 'category', 'tags']
 
     class FilterSerializer(serializers.Serializer):
         category = serializers.CharField(required=False)
@@ -68,24 +74,20 @@ class ArticleDetailApi(APIView):
             fields = ['id', 'author', 'title', 'slug', 'created', 'updated',
                       'publish_date', 'category', 'contents', 'status']
 
-    @article_status_or_permission_required(permission=view_permission, status=(Article.PUBLISHED,))
-    def get(self, request, slug):
-        article = article_detail(user=request.user, slug=slug)
+    @md(article_status_or_permission_required(permission=view_permission, status=(Article.PUBLISHED,)))
+    def get(self, request, article_slug):
+        article = article_detail(user=request.user, slug=article_slug)
         data = self.OutputSerializer(article).data
         return Response(data, status=HTTP_200_OK)
 
 
 class ArticleDeleteApi(APIView):
-    class InputSerializer(serializers.ModelSerializer):
-        class Meta:
-            model = Article
-            fields = ['id', 'slug', 'author']
 
-    @article_status_and_permission_required(permission=delete_permission, status=(Article.DRAFT,
-                                                                                  Article.BETA,
-                                                                                  Article.ARCHIVED))
-    def delete(self, request, slug):
-        article = get_object(Article, slug=slug)
+    @md(article_status_and_permission_required(permission=delete_permission, status=(Article.DRAFT,
+                                                                                     Article.BETA,
+                                                                                     Article.ARCHIVED)))
+    def delete(self, request, article_slug):
+        article = get_object(Article, slug=article_slug)
         article_delete(article=article, user=request.user)
         message = f"Article {slug} has been successfully deleted"
         return Response({'message': message}, status=HTTP_204_NO_CONTENT)

@@ -1,4 +1,5 @@
 import uuid
+
 from django.conf import settings
 from django.core.exceptions import FieldError
 from django.db import models
@@ -73,6 +74,6 @@ class Article(models.Model):
         return slug
 
     def save(self, *args, **kwargs):
-        if not self.slug:
+        if not self.slug or 'title' in kwargs.get('update_fields', []):
             self.slug = self._create_unique_slug()
         super().save(*args, **kwargs)

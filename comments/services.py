@@ -3,8 +3,9 @@ from typing import Iterable, Dict, Any
 from articles.models import Article
 from common.services import model_update
 from django.contrib.auth import get_user_model
-from django.core.exceptions import PermissionDenied, ValidationError
+from django.core.exceptions import PermissionDenied, ValidationError, BadRequest
 from django.db import transaction
+from rest_framework.status import HTTP_204_NO_CONTENT, HTTP_200_OK
 
 from .models import InlineComment, Comment
 from .utils import (merge_iterable_values_under_key,
@@ -24,7 +25,7 @@ def comment_validate_article_consistency(*, article: Article, parent_article: Ar
 def comment_freeze(*, comment: Comment):
     comment.contents = 'Comment deleted'
     comment.frozen = True
-    comment.save()
+    comment.save(update_fields=['frozen', 'contents'])
     return comment
 
 
@@ -34,6 +35,8 @@ def comment_create(*,
                    parent_comment: Comment = None,
                    **kwargs
                    ) -> Comment:
+    if not user.is_authenticated:
+        raise BadRequest()
     if parent_comment:
         comment_validate_article_consistency(article=article,
                                              parent_article=parent_comment.article)
@@ -46,14 +49,16 @@ def comment_create(*,
 def comment_update(*,
                    user: User,
                    comment: Comment,
-                   data: Dict[str, Any]
+                   data: Dict[str, Any],
+                   article: Article
                    ) -> Comment:
     # action not possible if comment has been answered (or is_staff, ofc)
-    if comment.has_children or not user == comment.author or comment.frozen:
+    if comment.has_children or not user == comment.author or comment.frozen or article.frozen:
         raise PermissionDenied('You cannot modify this comment')
+    fields = ['contents']
     updated_comment, was_updated = model_update(instance=comment, fields=fields, data=data)
     if not was_updated:
-        pass
+        return comment
     return updated_comment
 
 
@@ -61,9 +66,11 @@ def comment_delete(*, user: User, comment: Comment):
     if not user == comment.author or comment.frozen:
         raise PermissionDenied("Action not allowed")
     if comment.has_children:
-        freeze_comment(comment=comment)
+        comment_freeze(comment=comment)
+        return HTTP_200_OK
     else:
         comment.delete()
+        return HTTP_204_NO_CONTENT
 
 
 def split_nodes_are_valid(*, base: Iterable, modified: Iterable, inline_comment_id: str) -> bool:
@@ -119,7 +126,7 @@ def inline_comment_create(*,
                           parent_comment: InlineComment = None,
                           modified_article_contents: Iterable = None,
                           **kwargs) -> InlineComment:
-    article = Article.objects.select_for_update().filter(id=article_id)
+    article = Article.objects.select_for_update().get(id=article_id)
 
     if parent_comment:
         comment_validate_article_consistency(article=article, parent_article=parent_comment.article)
@@ -140,10 +147,11 @@ def inline_comment_create(*,
     return inline_comment
 
 
-def inline_comment_update(*, user: User, inline_comment: InlineComment):
+def inline_comment_update(*, user: User, inline_comment: InlineComment, data: Dict[str, Any]):
     if inline_comment.has_children or not (user == inline_comment.author) or inline_comment.frozen:
         raise PermissionDenied('You cannot modify this comment')
-    inline_comment = model_update(instance=inline_comment)
+    fields = []
+    inline_comment, was_updated = model_update(instance=inline_comment, data=data, fields=fields)
     return inline_comment
 
 

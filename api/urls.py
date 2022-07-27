@@ -8,22 +8,24 @@ comment_patterns = [
     path('create/', CommentCreateApi.as_view(), name='create'),
     path('<str:comment_uid>/', CommentDetailApi.as_view(), name='detail'),
     path('<str:comment_uid>/modify/', CommentUpdateApi.as_view(), name='update'),
-    path('<str:comment_uid>/delete/', CommentDeleteApi.as_view(), name='delete')
+    path('<str:comment_uid>/delete/', CommentDeleteApi.as_view(), name='delete'),
+    path('<str:comment_uid>/reply/', CommentCreateApi.as_view(), name='reply')
 ]
 
 article_patterns = [
     path('', ArticleListApi.as_view(), name='list'),
-    path('<slug:slug>', ArticleDetailApi.as_view(), name='detail'),
-    path('<slug:slug>/modify/', ArticleUpdateApi.as_view(), name='update'),
-    path('<slug:slug>/delete/', ArticleDeleteApi.as_view(), name='delete'),
-    path('<slug:slug>/comments/', include((comment_patterns, 'comments'), namespace='comments'))
+    path('<slug:article_slug>', ArticleDetailApi.as_view(), name='detail'),
+    path('<slug:article_slug>/modify/', ArticleUpdateApi.as_view(), name='update'),
+    path('<slug:article_slug>/delete/', ArticleDeleteApi.as_view(), name='delete'),
+    path('<slug:article_slug>/comments/', include((comment_patterns, 'comments'), namespace='comments'))
 
 ]
 
 urlpatterns = [
-    path('create/', ArticleCreateAPI.as_view()),
+    path('create/', ArticleCreateAPI.as_view(), name='create'),
     path('user/', include(acc_urls)),
-    path('main/', include((article_patterns, 'articles'), namespace='beta'), {'status': 'beta'}),
+    path('main/', include((article_patterns, 'articles'), namespace='main'), {'status': 'published'}),
+    path('beta/', include((article_patterns, 'articles'), namespace='beta'), {'status': 'beta'}),
     path('drafts/', include((article_patterns, 'articles'), namespace='drafts'), {'status': 'draft'}),
     path('archived/', include((article_patterns, 'articles'), namespace='archived'), {'status': 'archived'}),
 ]
