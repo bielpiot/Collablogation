@@ -23,7 +23,8 @@ SECRET_KEY = get_env("SECRET_KEY")
 
 DEBUG = True
 
-AUTHENTICATION_BACKENDS = ["accounts.auth_backends.ArticleBackend"]
+AUTHENTICATION_BACKENDS = ('accounts.auth_backends.ArticleBackend',
+                           'django.contrib.auth.backends.ModelBackend')
 
 ALLOWED_HOSTS = []
 

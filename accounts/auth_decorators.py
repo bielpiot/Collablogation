@@ -16,7 +16,7 @@ def article_status_or_permission_required(*, permission: Tuple = None, status: T
         @wraps(drf_view)
         def _wrapped(request, *args, **kwargs):
             article_slug = kwargs.get("article_slug")
-            # article = get_object(Article, slug=article_slug)
+            # article = get_object(Article, slug=article_slug) for some reason doesnt get object??
             article = Article.objects.get(slug=article_slug)
             perm_condition = False
             status_condition = False

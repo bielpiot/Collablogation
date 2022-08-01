@@ -5,7 +5,6 @@ from common.services import model_update
 from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied, ValidationError, BadRequest
 from django.db import transaction
-from rest_framework.status import HTTP_204_NO_CONTENT, HTTP_200_OK
 
 from .models import InlineComment, Comment
 from .utils import (merge_iterable_values_under_key,
@@ -53,7 +52,7 @@ def comment_update(*,
                    article: Article
                    ) -> Comment:
     # action not possible if comment has been answered (or is_staff, ofc)
-    if comment.has_children or not user == comment.author or comment.frozen or article.frozen:
+    if comment.has_children or not user == comment.author or comment.frozen or article.status == Article.ARCHIVED:
         raise PermissionDenied('You cannot modify this comment')
     fields = ['contents']
     updated_comment, was_updated = model_update(instance=comment, fields=fields, data=data)
@@ -62,15 +61,14 @@ def comment_update(*,
     return updated_comment
 
 
-def comment_delete(*, user: User, comment: Comment):
-    if not user == comment.author or comment.frozen:
+def comment_delete(*, user: User, comment: Comment, article: Article) -> None:
+    if not user == comment.author or comment.frozen or article.status == Article.ARCHIVED:
         raise PermissionDenied("Action not allowed")
     if comment.has_children:
         comment_freeze(comment=comment)
-        return HTTP_200_OK
+        # raise PermissionDenied("Action not allowed")
     else:
         comment.delete()
-        return HTTP_204_NO_CONTENT
 
 
 def split_nodes_are_valid(*, base: Iterable, modified: Iterable, inline_comment_id: str) -> bool:

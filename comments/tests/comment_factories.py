@@ -1,8 +1,8 @@
 import factory
-from ..models import Comment, InlineComment
-from faker import Faker
-from articles.tests.articles_factories import ArticleFactory
 from accounts.tests.accounts_factories import UserFactory
+from articles.tests.articles_factories import ArticleFactory
+from comments.models import Comment, InlineComment
+from faker import Faker
 
 faker = Faker()
 

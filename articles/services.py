@@ -1,13 +1,14 @@
 from typing import Any, Dict
 
+from accounts.perm_constants import article_permissions_pattern, FULL_ACCESS_SUFFIX
 from articles.utils import generate_groups_and_permissions
 from common.services import model_update
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.contrib.contenttypes.models import ContentType
+from django.db import transaction
 from django.utils import timezone
 
-from Collablogation.accounts.perm_constants import article_permissions_pattern, FULL_ACCESS_SUFFIX
 from .models import Article
 
 User = get_user_model()
@@ -33,9 +34,9 @@ def remove_users_from_article_perm_groups(*, article: Article):
         grp.user_set.remove()
 
 
+@transaction.atomic
 def article_create(*, user: User, **kwargs):
     """all logic behind Article creation - restrictions, relations etc"""
-    # TODO transaction atomic? article need to have its groups always
     article = Article.objects.create(author=user, **kwargs)
     article.status = Article.DRAFT
     article.full_clean()

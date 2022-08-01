@@ -30,7 +30,7 @@ class ArticleCreateAPI(APIView):
         return Response(serializer.errors, status=HTTP_400_BAD_REQUEST)
 
 
-class ArticleUpdateApi(APIView):
+class ArticleUpdateAPI(APIView):
     class InputSerializer(serializers.ModelSerializer):
         class Meta:
             model = Article
@@ -40,14 +40,15 @@ class ArticleUpdateApi(APIView):
                                                status=(Article.DRAFT, Article.BETA)))
     def patch(self, request, article_slug):
         article = get_object(Article, slug=article_slug)
-        if not self.InputSerializer.is_valid(raise_exception=True):
-            return Response(status=HTTP_400_BAD_REQUEST)
-        serialized = self.InputSerializer(data=request.data)
-        article_update(article=article, data=serialized.validated_data)
-        return Response(status=HTTP_200_OK)
+        serializer = self.InputSerializer(data=request.data)
+        if serializer.is_valid():
+            serialized = self.InputSerializer(data=request.data)
+            article_update(article=article, data=serialized.validated_data)
+            return Response(status=HTTP_200_OK)
+        return Response(serializer.errors, status=HTTP_400_BAD_REQUEST)
 
 
-class ArticleListApi(APIView):
+class ArticleListAPI(APIView):
     class OutputSerializer(serializers.ModelSerializer):
         class Meta:
             model = Article
@@ -67,7 +68,7 @@ class ArticleListApi(APIView):
         return Response(data, status=HTTP_200_OK)
 
 
-class ArticleDetailApi(APIView):
+class ArticleDetailAPI(APIView):
     class OutputSerializer(serializers.ModelSerializer):
         class Meta:
             model = Article
@@ -81,7 +82,7 @@ class ArticleDetailApi(APIView):
         return Response(data, status=HTTP_200_OK)
 
 
-class ArticleDeleteApi(APIView):
+class ArticleDeleteAPI(APIView):
 
     @md(article_status_and_permission_required(permission=delete_permission, status=(Article.DRAFT,
                                                                                      Article.BETA,
