@@ -76,9 +76,10 @@ def article_update(*, article: Article,
         fields.append('frozen')
     if status == Article.PUBLISHED and status_has_changed:
         data['publish_date'] = timezone.now()
-        fields.append('publish_date')
+        data['frozen'] = True
+        fields.extend(['publish_date', 'frozen'])
         # clean_pre_publish_formatting(article=article) TODO add when hooking beta section
     updated_article, was_updated = model_update(instance=article, fields=fields, data=data)
-    if not was_updated:
-        return article
+    # if not was_updated:
+    #     return article
     return updated_article

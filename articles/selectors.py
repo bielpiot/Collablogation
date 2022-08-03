@@ -1,6 +1,7 @@
 from accounts.perm_constants import view_permission
 from django.contrib.auth import get_user_model
 from django.db.models.query import QuerySet
+from django.shortcuts import get_object_or_404
 from django_filters import FilterSet
 
 from .models import Article
@@ -32,5 +33,5 @@ def article_list(*, user: User, filters=None, status: Article.status) -> QuerySe
 
 def article_detail(*, user: User, slug: str) -> Article:
     # placeholder for potential logic extension; if to be done - here is the place
-    article = get_object(Article, slug=slug)
+    article = get_object_or_404(Article, slug=slug)
     return article

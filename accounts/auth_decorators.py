@@ -29,7 +29,7 @@ def article_status_or_permission_required(*, permission: Tuple = None, status: T
                 except AttributeError:
                     perm_condition = perm_condition
             if status:
-                status_condition = (article.status in status)
+                status_condition = article.status in status
 
             if perm_condition or status_condition:
                 return drf_view(request, *args, **kwargs)
@@ -64,7 +64,7 @@ def article_status_and_permission_required(*, permission: Tuple = None, status: 
                 except AttributeError:
                     perm_condition = False
             if status:
-                status_condition = (article.status in status)
+                status_condition = article.status in status
 
             if perm_condition and status_condition:
                 return drf_view(request, *args, **kwargs)

@@ -16,7 +16,7 @@ def comment_belongs_to_article(*, comment: Comment, article: Article) -> bool:
 
 
 def comments_list_by_thread(*, article: Article) -> List[List[Comment]]:
-    qs = Comment.objects.filter(article=article).select_related('thread_id').order_by('-created')
+    qs = Comment.objects.filter(article=article).order_by('created')
 
     grouped = defaultdict(list)
     for comment in qs:
@@ -44,4 +44,3 @@ def inline_comment_list_by_thread(*, article: Article) -> Dict[str, List[InlineC
 def inline_comment_detail(*, article: Article, inline_comment: InlineComment) -> InlineComment:
     # placeholder, if some logic complication occurs in the future, operate here
     return inline_comment
-

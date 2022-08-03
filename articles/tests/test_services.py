@@ -1,10 +1,11 @@
-from accounts.test.accounts_factories import UserFactory
+from accounts.perm_constants import view_permission
+from accounts.tests.accounts_factories import UserFactory
+from articles.models import Article
 from django.contrib.auth.models import Group
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.test import TestCase
 
-from Collablogation.accounts.perm_constants import view_permission
 from .articles_factories import ArticleFactory
 from ..services import article_update, article_create, article_delete, create_perms_and_groups_for_article
 
@@ -20,8 +21,8 @@ class CreatePermsAndGroupsForArticleTest(TestCase):
     def test_create_perms_and_groups_for_article(self):
         codename, _ = view_permission
         self.assertEqual(Group.objects.all().count(), 0)
-        create_perms_and_groups_for_article(instance=self.test_article1.id)
-        view_perm = self.test_article1.id + codename
+        create_perms_and_groups_for_article(instance=self.test_article1)
+        view_perm = str(self.test_article1.id) + codename
         self.assertEqual(Group.objects.all().count(), 1)
         self.assertEqual(self.test_author1.has_article_perm(view_perm), True)
         self.assertEqual(self.test_author2.has_article_perm(view_perm), False)
@@ -38,7 +39,7 @@ class CreatePermsAndGroupsForArticleTest(TestCase):
 class ArticleCreateTest(TestCase):
     @classmethod
     def setUpTestData(cls):
-        cls.test_author1 = UserFactory
+        cls.test_author1 = UserFactory()
 
     def test_draft_even_if_passed_otherwise(self):
         article = article_create(user=self.test_author1, status=Article.PUBLISHED,
@@ -57,8 +58,8 @@ class ArticleDeleteTest(TestCase):
     def setUpTestData(cls):
         cls.test_article1 = ArticleFactory(title='Random title 1')
         cls.test_article2 = ArticleFactory(title='Random title 2')
-        cls.test_author1 = self.test_article1.author
-        cls.test_author2 = self.test_article2.author
+        cls.test_author1 = cls.test_article1.author
+        cls.test_author2 = cls.test_article2.author
 
     def test_article_deleted(self):
         self.assertEqual(get_object_or_404(Article, title='Random title 1'), self.test_article1)
@@ -73,9 +74,9 @@ class ArticleUpdateTest(TestCase):
     @classmethod
     def setUpTestData(cls):
         cls.test_article1 = ArticleFactory(title='Random title 1')
-        cls.test_article2 = ArticleFactory(title='Random title 2', frozen=True)
-        cls.test_author1 = self.test_article1.author
-        cls.test_author2 = self.test_article2.author
+        cls.test_article2 = ArticleFactory(title='Random title 2')
+        cls.test_author1 = cls.test_article1.author
+        cls.test_author2 = cls.test_article2.author
 
     def test_frozen_article_can_no_longer_be_updated(self):
         self.assertRaises(PermissionError, article_update(article=self.test_article2,

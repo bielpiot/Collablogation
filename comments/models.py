@@ -7,8 +7,8 @@ from django_extensions.db.fields import ShortUUIDField
 
 
 class BaseComment(models.Model):
-    article = models.ForeignKey(Article, related_name='%(class)ss', on_delete=models.CASCADE, editable=False)
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    article = models.ForeignKey(Article, related_name='%(class)ss', on_delete=models.CASCADE)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     uid = ShortUUIDField(unique=True, editable=False, null=True)
     contents = models.TextField()
@@ -37,10 +37,10 @@ class BaseComment(models.Model):
 class Comment(BaseComment):
 
     def __str__(self):
-        return f'{self.author} comment on {self.post}'
+        return f'{self.author} comment on {self.article}'
 
 
 class InlineComment(BaseComment):
 
     def __str__(self):
-        return f'{self.author} beta comment on {self.post}'
+        return f'{self.author} beta comment on {self.article}'

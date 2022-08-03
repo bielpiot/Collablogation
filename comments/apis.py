@@ -2,6 +2,7 @@ from accounts.auth_decorators import article_status_or_permission_required, arti
 from accounts.perm_constants import view_permission, add_inline_comments_permission
 from articles.models import Article
 from common.utils import get_object, inline_serializer
+from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator as md
 from rest_framework import serializers
 from rest_framework.response import Response
@@ -15,16 +16,17 @@ from .services import (comment_create, comment_update, comment_delete,
 
 
 class CommentListAPI(APIView):
-    class OutputSerializer(serializers.Serializer):
-        comments = inline_serializer(many=True, fields={
+    class OutputSerializer(serializers.ListSerializer):
+        child = inline_serializer(fields={
             'id': serializers.UUIDField(),
             'author': serializers.PrimaryKeyRelatedField(read_only=True),
             'contents': serializers.CharField(),
+            'thread_id': serializers.UUIDField()
         })
 
     @md(article_status_or_permission_required(permission=view_permission, status=(Article.PUBLISHED,)))
-    def get(self, request, article_slug):
-        article = get_object(Article, slug=article_slug)
+    def get(self, request, article_slug, **kwargs):
+        article = get_object_or_404(Article, slug=article_slug)
         threads = comments_list_by_thread(article=article)
         data = self.OutputSerializer(threads, many=True).data
         return Response(data=data, status=HTTP_200_OK)
@@ -37,9 +39,9 @@ class CommentDetailAPI(APIView):
             fields = ['id', 'author', 'contents', 'created', 'updated', 'parent_comment']
 
     @md(article_status_or_permission_required(permission=view_permission, status=Article.PUBLISHED))
-    def get(self, request, comment_uid, article_slug):
-        article = get_object(Article, slug=article_slug)
-        comment = get_object(Comment, uid=comment_uid, article=article)
+    def get(self, request, comment_uid, article_slug, **kwargs):
+        # article = get_object_or_404(Article, slug=article_slug)
+        comment = get_object_or_404(Comment, uid=comment_uid, article__slug=article_slug)
         comment_ = comment_detail(user=request.user, comment=comment)
         serialized = self.OutputSerializer(comment_)
         return Response(data=serialized.data, status=HTTP_200_OK)
@@ -52,8 +54,8 @@ class CommentCreateAPI(APIView):
             fields = ['contents']
 
     @md(article_status_and_permission_required(status=(Article.PUBLISHED,)))
-    def post(self, request, article_slug, comment_uid=None):
-        article = get_object(Article, slug=article_slug)
+    def post(self, request, article_slug, comment_uid=None, **kwargs):
+        article = get_object_or_404(Article, slug=article_slug)
         serializer = self.InputSerializer(data=request.data)
         if serializer.is_valid():
             parent_comment = None
@@ -76,10 +78,10 @@ class CommentUpdateAPI(APIView):
             model = Comment
             fields = ['id', 'author', 'contents', 'created', 'updated', 'parent_comment']
 
-    def patch(self, request, comment_uid, article_slug):
+    def patch(self, request, comment_uid, article_slug, **kwargs):
         input_serializer = self.InputSerializer(data=request.data)
-        article = get_object(Article, slug=article_slug)
-        comment = get_object(Comment, uid=comment_uid, article=article)
+        article = get_object_or_404(Article, slug=article_slug)
+        comment = get_object_or_404(Comment, uid=comment_uid, article__slug=article_slug)
         # article = Article.objects.get(slug=article_slug)
         # comment = Comment.objects.get(uid=comment_uid)
         if input_serializer.is_valid():
@@ -92,9 +94,9 @@ class CommentUpdateAPI(APIView):
 
 class CommentDeleteAPI(APIView):
 
-    def delete(self, request, comment_uid, article_slug):
-        article = get_object(Article, slug=article_slug)
-        comment = get_object(Comment, uid=comment_uid, article=article)
+    def delete(self, request, comment_uid, article_slug, **kwargs):
+        article = get_object_or_404(Article, slug=article_slug)
+        comment = get_object_or_404(Comment, uid=comment_uid, article__slug=article_slug)
         comment_delete(user=request.user, comment=comment, article=article)
         return Response(status=HTTP_204_NO_CONTENT)
 
@@ -107,8 +109,8 @@ class InlineCommentListAPI(APIView):
         pass
 
     @md(article_status_or_permission_required(permission=view_permission))
-    def get(self, request, article_slug):
-        article = get_object(Article, slug=article_slug)
+    def get(self, request, article_slug, **kwargs):
+        article = get_object_or_404(Article, slug=article_slug)
         comments = inline_comment_list_by_thread(article=article)
         data = self.OutputSerializer(comments, many=True).data
         return Response(data=data)
@@ -125,8 +127,8 @@ class InlineCommentUpdateAPI(APIView):
             model = InlineComment
             fields = ['id', 'author', 'contents', 'created', 'thread_id']
 
-    def patch(self, request, inline_comment_id):
-        inline_comment = get_object(InlineComment, id=inline_comment_id)
+    def patch(self, request, inline_comment_id, **kwargs):
+        inline_comment = get_object_or_404(InlineComment, id=inline_comment_id)
         serialized_in = self.InputSerializer(data=request.data)
         updated_comment = inline_comment_update(user=request.user, data=serialized_in.validated_data)
         serialized_out = self.OutputSerializer(updated_comment)
@@ -140,9 +142,9 @@ class InlineCommentDetailAPI(APIView):
             fields = ['author', 'contents', 'id']
 
     @md(article_status_and_permission_required(permission=view_permission, status=(Article.BETA, Article.DRAFT)))
-    def get(self, request, article_slug, inline_comment_uid):
-        article = get_object(Article, slug=article_slug)
-        inline_comment_in = get_object(InlineComment, uid=inline_comment_uid)
+    def get(self, request, article_slug, inline_comment_uid, **kwargs):
+        article = get_object_or_404(Article, slug=article_slug)
+        inline_comment_in = get_object_or_404(InlineComment, uid=inline_comment_uid)
         inline_comment_out = inline_comment_detail(article=article, inline_comment=inline_comment_in)
         serialized = self.OutputSerializer(inline_comment_out)
         return Response(data=serialized.data, status=HTTP_200_OK)
@@ -156,13 +158,13 @@ class InlineCommentCreateAPI(APIView):
 
     @md(article_status_and_permission_required(permission=add_inline_comments_permission,
                                                status=(Article.BETA, Article.DRAFT)))
-    def post(self, request, article_slug, inline_comment_uid=None):
-        article = get_object(Article, slug=article_slug)
+    def post(self, request, article_slug, inline_comment_uid=None, **kwargs):
+        article = get_object_or_404(Article, slug=article_slug)
         serializer = self.InputSerializer(data=request.data)
         serializer.is_valid()
         parent_comment = None
         if inline_comment_uid:
-            parent_comment = get_object(InlineComment, uid=inline_comment_uid)
+            parent_comment = get_object_or_404(InlineComment, uid=inline_comment_uid)
         inline_comment_create(user=request.user, article_id=article.id,
                               parent_comment=parent_comment, **serializer.validated_data)
         return Response(status=HTTP_201_CREATED)
@@ -170,7 +172,7 @@ class InlineCommentCreateAPI(APIView):
 
 class InlineCommentDeleteAPI(APIView):
 
-    def delete(self, request, inline_comment_uid):
-        inline_comment = get_object(InlineComment, uid=inline_comment_uid)
+    def delete(self, request, inline_comment_uid, **kwargs):
+        inline_comment = get_object_or_404(InlineComment, uid=inline_comment_uid)
         inline_comment_delete(user=request.user, inline_comment=inline_comment)
         return Response(status=HTTP_204_NO_CONTENT)

@@ -14,7 +14,7 @@ comment_patterns = [
 
 article_patterns = [
     path('', ArticleListAPI.as_view(), name='list'),
-    path('<slug:article_slug>', ArticleDetailAPI.as_view(), name='detail'),
+    path('<slug:article_slug>/', ArticleDetailAPI.as_view(), name='detail'),
     path('<slug:article_slug>/modify/', ArticleUpdateAPI.as_view(), name='update'),
     path('<slug:article_slug>/delete/', ArticleDeleteAPI.as_view(), name='delete'),
     path('<slug:article_slug>/comments/', include((comment_patterns, 'comments'), namespace='comments'))

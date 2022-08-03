@@ -4,7 +4,9 @@ from django.conf import settings
 from django.core.exceptions import FieldError
 from django.db import models
 from django.utils.text import slugify
+from django.utils.translation import gettext_lazy as _
 from taggit.managers import TaggableManager
+from taggit.models import GenericUUIDTaggedItemBase, TaggedItemBase
 
 
 class PublishedManager(models.Manager):
@@ -25,6 +27,16 @@ class BetaManager(models.Manager):
 class ArchivedManager(models.Manager):
     def get_queryset(self, *args, **kwargs):
         return super().get_queryset().filter(status=Article.ARCHIVED)
+
+
+class UUIDTaggedItem(GenericUUIDTaggedItemBase, TaggedItemBase):
+    # If you only inherit GenericUUIDTaggedItemBase, you need to define
+    # a tag field. e.g.
+    # tag = models.ForeignKey(Tag, related_name="uuid_tagged_items", on_delete=models.CASCADE)
+
+    class Meta:
+        verbose_name = _("Tag")
+        verbose_name_plural = _("Tags")
 
 
 class Article(models.Model):
@@ -54,13 +66,16 @@ class Article(models.Model):
     contents = models.TextField()
     status = models.CharField(max_length=15, choices=READINESS_CHOICES, default='draft')
 
-    tags = TaggableManager()
+    tags = TaggableManager(through=UUIDTaggedItem)
 
     published = PublishedManager()
     beta = BetaManager()
     drafts = DraftsManager()
     archived = ArchivedManager()
     objects = models.Manager()
+
+    def __str__(self):
+        return self.title
 
     def _create_unique_slug(self):
         max_length = self._meta.get_field('slug').max_length
