@@ -19,9 +19,9 @@ class CommentListAPITest(APITestCase):
         cls.test_author2 = UserFactory()
         cls.test_article1 = ArticleFactory(title='test article 1', status='published', author=cls.test_author1)
         cls.test_article2 = ArticleFactory(title='test article 2', status='archived', author=cls.test_author1)
-        cls.test_comment1 = CommentFactory(article=cls.test_article1)
-        cls.test_comment2 = CommentFactory(article=cls.test_article1)
-        cls.test_comment3 = CommentFactory(article=cls.test_article2)
+        cls.test_comment1 = CommentFactory(article=cls.test_article1, parent_comment=None)
+        cls.test_comment2 = CommentFactory(article=cls.test_article2, parent_comment=None)
+        cls.test_comment3 = CommentFactory(article=cls.test_article1, parent_comment=None)
         cls.factory = APIRequestFactory()
         cls.view = CommentListAPI.as_view()
 
@@ -197,8 +197,8 @@ class CommentUpdateAPITest(APITestCase):
         self.assertEqual(response.status_code, HTTP_403_FORBIDDEN)
 
     def test_comment_properly_updated(self):
-        comment_uid = self.test_comment1.uid
-        article_slug = self.test_article3.slug
+        comment_uid = self.test_comment3.uid
+        article_slug = self.test_article2.slug
         kwargs = {"comment_uid": comment_uid, "article_slug": article_slug}
         url = reverse('archived:comments:update', kwargs=kwargs)
         request = self.factory.patch(url, {'contents': 'updated contents'})
@@ -251,7 +251,7 @@ class CommentDeleteAPITest(APITestCase):
         self.assertEqual(response.status_code, HTTP_403_FORBIDDEN)
         self.assertEqual(Comment.objects.count(), 3)
 
-    def test_denied_article_frozen(self):
+    def test_denied_article_archived(self):
         self.assertEqual(Comment.objects.count(), 3)
         comment_uid = self.test_comment3.uid
         article_slug = self.test_article1.slug
@@ -266,7 +266,7 @@ class CommentDeleteAPITest(APITestCase):
     def test_properly_deleted(self):
         self.assertEqual(Comment.objects.count(), 3)
         comment_uid = self.test_comment2.uid
-        article_slug = self.test_article1.slug
+        article_slug = self.test_article2.slug
         kwargs = {"comment_uid": comment_uid, "article_slug": article_slug}
         url = reverse('main:comments:delete', kwargs=kwargs)
         request = self.factory.delete(url)

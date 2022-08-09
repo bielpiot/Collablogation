@@ -85,7 +85,8 @@ class CommentDeleteTest(TestCase):
 
     def test_getting_frozen_if_answered(self):
         self.assertEqual(self.test_comment1.frozen, False)
-        comment_delete(comment=self.test_comment1, user=self.test_author1, article=self.test_article1)
+        with self.assertRaisesMessage(PermissionDenied, "Comment has been answered, deletion no longer allowed!"):
+            comment_delete(comment=self.test_comment1, user=self.test_author1, article=self.test_article1)
         self.assertEqual(self.test_comment1.frozen, True)
         self.assertEqual(self.test_comment1.contents, 'Comment deleted')
 

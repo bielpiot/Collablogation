@@ -18,39 +18,6 @@ from .services import article_create, article_update, article_delete
 User = get_user_model()
 
 
-class ArticleCreateAPI(APIView):
-    class InputSerializer(serializers.ModelSerializer, TaggitSerializer):
-        class Meta:
-            model = Article
-            fields = ['title', 'contents', 'tags']
-            optional_fields = ['category', ]
-
-    def post(self, request, **kwargs):
-        serializer = self.InputSerializer(data=request.data)
-        if serializer.is_valid():
-            article_create(user=request.user, **serializer.validated_data)
-            return Response(data=serializer.data, status=HTTP_201_CREATED)
-        return Response(serializer.errors, status=HTTP_400_BAD_REQUEST)
-
-
-class ArticleUpdateAPI(APIView):
-    class InputSerializer(serializers.ModelSerializer, TaggitSerializer):
-        class Meta:
-            model = Article
-            fields = ['title', 'category', 'contents']
-
-    @md(article_status_and_permission_required(permission=full_edit_permission,
-                                               status=(Article.DRAFT, Article.BETA)))
-    def patch(self, request, article_slug, **kwargs):
-        article = get_object_or_404(Article, slug=article_slug)
-        serializer = self.InputSerializer(data=request.data)
-        if serializer.is_valid():
-            serialized = self.InputSerializer(data=request.data)
-            article_update(article=article, data=serialized.validated_data)
-            return Response(status=HTTP_200_OK)
-        return Response(serializer.errors, status=HTTP_400_BAD_REQUEST)
-
-
 class ArticleListAPI(APIView):
     class OutputSerializer(serializers.ModelSerializer, TaggitSerializer):
         tags = TagListSerializerField()
@@ -71,7 +38,7 @@ class ArticleListAPI(APIView):
                                 status=status,
                                 filters=filters.validated_data)
         data = self.OutputSerializer(articles, many=True).data
-        return Response(data, status=HTTP_200_OK)
+        return Response(data=data, status=HTTP_200_OK)
 
 
 class ArticleDetailAPI(APIView):
@@ -87,7 +54,52 @@ class ArticleDetailAPI(APIView):
     def get(self, request, article_slug, **kwargs):
         article = article_detail(user=request.user, slug=article_slug)
         data = self.OutputSerializer(article).data
-        return Response(data, status=HTTP_200_OK)
+        return Response(data=data, status=HTTP_200_OK)
+
+
+class ArticleCreateAPI(APIView):
+    class InputSerializer(serializers.ModelSerializer, TaggitSerializer):
+        tags = TagListSerializerField()
+
+        class Meta:
+            model = Article
+            fields = ['title', 'contents', 'tags']
+            optional_fields = ['category', ]
+
+    def post(self, request, **kwargs):
+        serializer = self.InputSerializer(data=request.data)
+        if serializer.is_valid():
+            article_create(user=request.user, **serializer.validated_data)
+            return Response(data=serializer.data, status=HTTP_201_CREATED)
+        return Response(serializer.errors, status=HTTP_400_BAD_REQUEST)
+
+
+class ArticleUpdateAPI(APIView):
+    class InputSerializer(serializers.ModelSerializer, TaggitSerializer):
+        tags = TagListSerializerField()
+
+        class Meta:
+            model = Article
+            fields = ['title', 'category', 'contents', 'tags']
+
+    class OutputSerializer(serializers.ModelSerializer, TaggitSerializer):
+        tags = TaggitSerializer()
+
+        class Meta:
+            model = Article
+            fields = ['id', 'author', 'title', 'slug', 'created', 'updated',
+                      'publish_date', 'category', 'contents', 'status', 'tags']
+
+    @md(article_status_and_permission_required(permission=full_edit_permission,
+                                               status=(Article.DRAFT, Article.BETA)))
+    def patch(self, request, article_slug, **kwargs):
+        article = get_object_or_404(Article, slug=article_slug)
+        input_serializer = self.InputSerializer(data=request.data, partial=True)
+        if input_serializer.is_valid():
+            updated_article = article_update(article=article, data=input_serializer.validated_data)
+            output_serializer = self.OutputSerializer(updated_article)
+            return Response(data=output_serializer.data, status=HTTP_200_OK)
+        return Response(serializer.errors, status=HTTP_400_BAD_REQUEST)
 
 
 class ArticleDeleteAPI(APIView):
@@ -98,5 +110,5 @@ class ArticleDeleteAPI(APIView):
     def delete(self, request, article_slug, **kwargs):
         article = get_object_or_404(Article, slug=article_slug)
         article_delete(article=article, user=request.user)
-        message = f"Article {slug} has been successfully deleted"
+        message = f"Article {article} has been successfully deleted"
         return Response({'message': message}, status=HTTP_204_NO_CONTENT)

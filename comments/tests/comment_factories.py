@@ -10,7 +10,7 @@ faker = Faker()
 class CommentFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Comment
-        django_get_or_create = ('article', 'author', 'parent_comment')
+        # django_get_or_create = ('article', 'author', 'parent_comment')
 
     article = factory.SubFactory(ArticleFactory)
     author = factory.SubFactory(UserFactory)
@@ -21,9 +21,9 @@ class CommentFactory(factory.django.DjangoModelFactory):
 class InlineCommentFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = InlineComment
+        # django_get_or_create = ('article', 'author', 'parent_comment')
 
     article = factory.SubFactory(ArticleFactory)
     author = factory.SubFactory(UserFactory)
     contents = factory.LazyAttribute(lambda _: faker.paragraphs(nb=5))
     parent_comment = factory.LazyAttribute(lambda _: InlineCommentFactory(parent_comment=None))
-    # thread_id = parent_comment.id

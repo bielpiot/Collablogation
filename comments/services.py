@@ -52,7 +52,7 @@ def comment_update(*,
                    article: Article
                    ) -> Comment:
     # action not possible if comment has been answered (or is_staff, ofc)
-    if comment.has_children or not user == comment.author or comment.frozen or article.status == Article.ARCHIVED:
+    if comment.has_children or not user == comment.author or comment.frozen:
         raise PermissionDenied('You cannot modify this comment')
     fields = ['contents']
     updated_comment, was_updated = model_update(instance=comment, fields=fields, data=data)
@@ -62,11 +62,11 @@ def comment_update(*,
 
 
 def comment_delete(*, user: User, comment: Comment, article: Article) -> None:
-    if not user == comment.author or comment.frozen or article.status == Article.ARCHIVED:
+    if not user == comment.author or comment.frozen:
         raise PermissionDenied("Action not allowed")
-    if comment.has_children:
+    elif comment.has_children:
         comment_freeze(comment=comment)
-        # raise PermissionDenied("Action not allowed")
+        raise PermissionDenied("Comment has been answered, deletion no longer allowed!")
     else:
         comment.delete()
 

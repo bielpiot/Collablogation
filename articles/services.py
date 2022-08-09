@@ -1,8 +1,8 @@
 from typing import Any, Dict
 
 from accounts.perm_constants import article_permissions_pattern, FULL_ACCESS_SUFFIX
-from articles.utils import generate_groups_and_permissions
 from common.services import model_update
+from common.utils import generate_groups_and_permissions
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.contrib.contenttypes.models import ContentType
@@ -58,26 +58,26 @@ def article_delete(*, article: Article, user: User):
     Cannot be performed on published article - authorization
     clear perms/delete related group objects?
     """
+    if article.status == Article.PUBLISHED:
+        raise PermissionError('This resource cannot be deleted!')
     article.delete()
 
 
+@transaction.atomic
 def article_update(*, article: Article,
                    data: Dict[str, Any]
                    ) -> Article:
-    """all logic behind Article edition - restrictions, relations etc"""
-    if article.frozen:
-        raise PermissionError('This resource cannot be modified anymore')
+    """logic behind Article edition - restrictions, relations etc"""
     old_status = getattr(article, 'status')
     status = data.get('status', old_status)
     status_has_changed = (old_status != status)
-    fields = ['contents', 'status', 'category', 'tags', 'title']
-    if status == Article.ARCHIVED and status_has_changed:
-        data['frozen'] = True
-        fields.append('frozen')
+    fields = ['contents', 'status', 'category', 'title']
+    if 'tags' in data:
+        for tag in data['tags']:
+            article.tags.add(tag)
     if status == Article.PUBLISHED and status_has_changed:
         data['publish_date'] = timezone.now()
-        data['frozen'] = True
-        fields.extend(['publish_date', 'frozen'])
+        fields.append('publish_date')
         # clean_pre_publish_formatting(article=article) TODO add when hooking beta section
     updated_article, was_updated = model_update(instance=article, fields=fields, data=data)
     # if not was_updated:

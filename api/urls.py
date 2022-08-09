@@ -18,12 +18,11 @@ article_patterns = [
     path('<slug:article_slug>/modify/', ArticleUpdateAPI.as_view(), name='update'),
     path('<slug:article_slug>/delete/', ArticleDeleteAPI.as_view(), name='delete'),
     path('<slug:article_slug>/comments/', include((comment_patterns, 'comments'), namespace='comments'))
-
 ]
 
 urlpatterns = [
     path('', include(acc_urls)),
-    path('create/', ArticleCreateAPI.as_view(), name='create'),
+    path('create/', ArticleCreateAPI.as_view(), name='article-create'),
     path('main/', include((article_patterns, 'articles'), namespace='main'), {'status': 'published'}),
     path('beta/', include((article_patterns, 'articles'), namespace='beta'), {'status': 'beta'}),
     path('drafts/', include((article_patterns, 'articles'), namespace='drafts'), {'status': 'draft'}),

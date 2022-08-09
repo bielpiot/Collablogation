@@ -68,11 +68,11 @@ class Article(models.Model):
 
     tags = TaggableManager(through=UUIDTaggedItem)
 
+    objects = models.Manager()
     published = PublishedManager()
     beta = BetaManager()
     drafts = DraftsManager()
     archived = ArchivedManager()
-    objects = models.Manager()
 
     def __str__(self):
         return self.title
