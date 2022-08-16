@@ -11,3 +11,5 @@ build/
 tests/report/
 env.json
 TODO.txt
+venv/
+.idea/
