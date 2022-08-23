@@ -1,80 +1,80 @@
 # Collablogation
+
 > A free-access publicing platform, where authors can work on their articles while getting pre-publish feedback or fully collaborate as a group of authors.
-> In development. <!-- If you have the project hosted somewhere, include the link here. -->
+>
+> *** **In development** ***.
 
 ## Table of Contents
-* [General Info](#general-information)
+
+* [Overview](#Overview)
 * [Technologies Used](#technologies-used)
 * [Features](#features)
 * [Screenshots](#screenshots)
 * [Setup](#setup)
 * [Usage](#usage)
 * [Project Status](#project-status)
-* [Room for Improvement](#room-for-improvement)
-* [Acknowledgements](#acknowledgements)
+* [Planned improvements](#planned-improvements)
 * [Contact](#contact)
+
 <!-- * [License](#license) -->
 
+## Overview
 
-## General Information
-Collablogation aims to exist as a space for text contents creator to work on and share. It is not merely a blog - it extends classical experience, allowing users
-to retain their sense of individuality while inviting them to space of collaboration, where they can both seek for and provide feedback or even put up bigger projects as a team.
+Collablogation aims to exist as a space for text contents creators to work on and share. It is not merely a blog - it
+extends classical experience, allowing users to retain their sense of individuality while inviting them to a space of
+collaboration, where they can both seek for and provide feedback or team-up for bigger projects. On top of "classic"
+article sections Collablogation provides beta section, when the actual collaboration happens. Depending on permissions
+granted by instance owner, users can add inline comments (similar to google docs) or participate in full manner.
 <!-- You don't have to answer all the questions - just the ones relevant to your project. -->
 
-
 ## Technologies Used
+
 Backend - Django + DRF
 
 Frontend - React + Slate.js
 
-Development - Docker
-
+Distribution - Docker
 
 ## Features
-List the ready features here[API]:
-- Articles system with custom per-instance permissions
-- Commenting system, relevant for published articles
 
-Features in progress[API]:
-- Inline comments system, relevant for articles in pre-publish, collaboration stage called beta
-- Beta invitations and requests
+Features in place:
+
+- Articles app with custom per-instance permissions system [API]
+- Regular comments, relevant for published articles [API]
+
+Features in development:
+
+- Inline comments system, relevant for articles in pre-publish, beta section[API]
+- Article instance permissions invitations and requests [API]
+- UI (react + slate.js) [FRONTED]
 
 Planned features:
-- Chat channels and personal messages[API]
-- UI (react + slate.js)
 
+- Chat channels and personal messaging system [API]
 
 ## Screenshots
-![coming soon](./img/screenshot.png)
-<!-- If you have screenshots you'd like to share, include them here. -->
 
+coming soon
 
 ## Setup
-coming soon
 
+coming soon <docker-based>
 
 ## Usage
+
 coming soon
 
-
 ## Project Status
-_in progress_ 
 
+_in development_
 
-## Room for Improvement
+## Planned improvements
 
-
-Room for improvement:
-- Improvement to be done 1
-- Improvement to be done 2
-
-
-
-## Acknowledgements
-placeholder.
-
+- API tailoring: pagination, content negotiation
+- Performance: caching, profiling
 
 ## Contact
+
 Created by [Piotr Bielecki](bielpiot@gmail.com) - feel free to contact me!
 
 

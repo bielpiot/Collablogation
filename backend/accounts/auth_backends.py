@@ -5,9 +5,9 @@ from django.contrib.auth.models import Permission
 
 
 class ArticleBackend(ModelBackend):
-    '''
+    """
     A Backend class processing per-article instance permissions
-    '''
+    """
 
     def _get_user_article_permissions(self, user_obj, article):
         codename_pref = str(article.id)
@@ -23,10 +23,11 @@ class ArticleBackend(ModelBackend):
             codename__startswith=article_id)
 
     def _get_article_permissions(self, user_obj, article, from_name):
-        '''
+        """
         Following predecessor's logic, generic rule for both group and
         user permissions (derived by specifying from name)
-        '''
+        """
+
         if not user_obj.is_active or user_obj.is_anonymous:
             return set()
 
