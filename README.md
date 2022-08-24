@@ -75,7 +75,7 @@ _in development_
 
 ## Contact
 
-Created by [Piotr Bielecki](bielpiot@gmail.com) - feel free to contact me!
+Created by [Piotr Bielecki](bielpiot@gmail.com)
 
 
 <!-- Optional -->
