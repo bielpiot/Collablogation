@@ -56,7 +56,7 @@ class Article(models.Model):
     ]
 
     id = models.UUIDField(primary_key=True, db_index=True, default=uuid.uuid4, editable=False)
-    author = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='posts', on_delete=models.CASCADE)
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='articles', on_delete=models.CASCADE)
     title = models.CharField(max_length=50)
     slug = models.SlugField(unique=True, null=True, blank=True, max_length=27)
     created = models.DateTimeField(auto_now_add=True)

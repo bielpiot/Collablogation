@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'common.apps.CommonConfig',
     'rest_framework',
     'rest_framework_simplejwt',
+    'corsheaders',
     'djoser',
     'taggit',
     'django_filters',
@@ -50,6 +51,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -169,3 +171,7 @@ EMAIL_PORT = 587
 EMAIL_HOST_USER = get_env("EMAIL_ADDRESS")
 EMAIL_HOST_PASSWORD = get_env("EMAIL_PASSWORD")
 EMAIL_USE_TLS = True
+
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:3000',
+]
