@@ -9,16 +9,23 @@ services:
       - POSTGRES_DB=Collablogation
       - POSTGRES_USER=Collablogation
       - DB_PASSWORD=${DB_PASSWORD}
-  web:
-    build: .
-    command: python manage.py runserver 0.0.0.0:8000
-    volumes:
-      - .:/code
+  backend:
+    build: ./backend
     ports:
-      - "8000:8000"
+      -"8000:8000"
+    volumes:
+    depends_on:
+      - db
     environment:
       - SECRET_KEY=${SECRET_KEY}
       - DB_PASSWORD=${DB_PASSWORD}
       - EMAIL_PASSWORD=${EMAIL_PASSWORD}
-    depends_on:
-      - db
+    command: [ "python", "manage.py", "runserver", "0.0.0.0:8000" ]
+
+  web:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/code
+

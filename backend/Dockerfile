@@ -2,8 +2,14 @@ FROM python:3.8.3
 
 ENV PYTHONUNBUFFERED=1
 
-RUN MKDIR /app
-WORKDIR /app
+RUN MKDIR /backend
+
+WORKDIR /backend
+
 COPY requirements.txt /app/
+
 RUN pip install -r requirements.txt
-COPY . /app/
+
+COPY . .
+
+EXPOSE 8000
